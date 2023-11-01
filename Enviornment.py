@@ -1,80 +1,83 @@
-# Enviornment.py
-# by christophermao
-# 10/31/23
+# Import the necessary libraries
 import pygame
+
+# Initialize pygame
 pygame.init()
 
+field_width = 345
+field_height = 225
 # Set up the drawing window
-screen_width_ft = (345 + 10 + 10) * 2  # 10 feet on each side
-screen_height_ft = (225 + 20 + 20) * 2  # 20 feet on each side
+screen_width_ft = (field_width + 10 + 10) * 2  # 10 feet on each side
+screen_height_ft = (field_height + 20 + 20) * 2  # 20 feet on each side
 screen = pygame.display.set_mode([screen_width_ft, screen_height_ft])
 
-# Goals are 24 feet long
+# Calculate the center of the screen
+center_x = screen_width_ft // 2
+center_y = screen_height_ft // 2
 
-# Import controls for testing
-from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_w,
-    K_s,
-    K_a,
-    K_d,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
+# Define the size of the centered box
+box_width = field_width * 2
+box_height = field_height * 2
 
-# Define a Player object by extending pygame.sprite.Sprite
-# The surface drawn on the screen is now an attribute of 'player'
-class Player(pygame.sprite.Sprite):
+
+# Calculate the position to center the box
+box_x = center_x - (box_width // 2)
+box_y = center_y - (box_height // 2)
+
+# Define the Player class
+class Player:
     def __init__(self):
-        super(Player, self).__init__()
-        self.surf = pygame.Surface((75, 75))
-        self.surf.fill((255, 255, 255))
-        self.rect = self.surf.get_rect()
+        self.radius = 4  # Radius for the circle
+        self.x = center_x
+        self.y = center_y
 
-    def update(self, pressed_keys):
-        if pressed_keys[K_UP]:
-            self.rect.move_ip(0, -5)
-        if pressed_keys[K_DOWN]:
-            self.rect.move_ip(0, 5)
-        if pressed_keys[K_LEFT]:
-            self.rect.move_ip(-5, 0)
-        if pressed_keys[K_RIGHT]:
-            self.rect.move_ip(5, 0)
+    def move(self, pressed_keys):
+        if pressed_keys[pygame.K_UP] and self.y - self.radius > box_y:
+            self.y -= 5
+        if pressed_keys[pygame.K_DOWN] and self.y + self.radius < box_y + box_height:
+            self.y += 5
+        if pressed_keys[pygame.K_LEFT] and self.x - self.radius > box_x:
+            self.x -= 5
+        if pressed_keys[pygame.K_RIGHT] and self.x + self.radius < box_x + box_width:
+            self.x += 5
 
-        # Keep player on the screen
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > screen_width_ft:
-            self.rect.right = screen_width_ft
-        if self.rect.top <= 0:
-            self.rect.top = 0
-        if self.rect.bottom >= screen_height_ft:
-            self.rect.bottom = screen_height_ft
+    def draw(self, surface):
+        pygame.draw.circle(surface, (255, 0, 0), (self.x, self.y), self.radius)  # Red circle
 
+# Create a Player object
 player = Player()
 
 # Run until the user asks to quit
 running = True
 while running:
-
-    # Close window function
     for event in pygame.event.get():
-        if event.type == QUIT:
+        if event.type == pygame.QUIT:
             running = False
-
-    # Player movement
-    pressed_keys = pygame.key.get_pressed()
-    player.update(pressed_keys)
 
     # Fill the background with green
     screen.fill((50, 168, 82))
 
-    # Draw player
-    screen.blit(player.surf, player.rect.topleft)  # Use player's rect to determine position
+    # Draw field
+    # Draw outside box
+    pygame.draw.rect(screen, (0, 0, 0), (box_x, box_y, box_width, box_height), 3)  # Black bounding line, 3 pixels thick
+    pygame.draw.rect(screen, (50, 168, 82), (box_x + 3, box_y + 3, box_width - 6, box_height - 6))  # green
+    # TODO: Center circle size
+    pygame.draw.circle(screen, (0, 0, 0), (screen_width_ft // 2, screen_height_ft // 2), 10)
+    pygame.draw.circle(screen, (50, 168, 82), (screen_width_ft // 2, screen_height_ft // 2), 8)
+    # Draw mid line
+    pygame.draw.rect(screen, (0, 0, 0), (center_x - 1, center_y - (box_height/2), 2, box_height))
+    # Draw goals
+    # Goal #1:
+    pygame.draw.rect(screen, (0, 0, 0), (box_x - 14, box_y + box_height//2 - 12, box_x - 6, box_y))
+    # Goal #2:
+    pygame.draw.rect(screen, (0, 0, 0), (box_x + 14 + box_width, box_y + box_height//2 - 12, box_x + box_width - 6, box_y))
+
+
+
+    # Move and draw the player
+    pressed_keys = pygame.key.get_pressed()
+    player.move(pressed_keys)
+    player.draw(screen)
 
     # Flip the display
     pygame.display.flip()

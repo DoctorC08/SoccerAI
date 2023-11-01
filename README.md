@@ -1,1 +1,2 @@
 # SoccerAI
+Creating a SoccerAI

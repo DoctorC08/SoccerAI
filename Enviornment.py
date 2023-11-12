@@ -4,6 +4,8 @@ import numpy as np
 import pygame
 import gym
 from gym import spaces
+from gym.spaces import Box, Tuple, Discrete
+
 import numpy as np
 
 # Initialize pygame
@@ -29,7 +31,7 @@ box_height = field_height * 2
 box_x = center_x - (box_width // 2)
 box_y = center_y - (box_height // 2)
 
-# Define the Player class
+# Define the Player class for pygame
 class Player:
     def __init__(self):
         self.radius = 8  # Radius for the circle
@@ -39,6 +41,7 @@ class Player:
     def move(self, pressed_keys):
         if pressed_keys[pygame.K_UP] and self.y - self.radius > box_y:
             self.y -= 5
+            self.action = []
         if pressed_keys[pygame.K_DOWN] and self.y + self.radius < box_y + box_height:
             self.y += 5
         if pressed_keys[pygame.K_LEFT] and self.x - self.radius > box_x:
@@ -49,6 +52,7 @@ class Player:
     def draw(self, surface):
         pygame.draw.circle(surface, (255, 0, 0), (self.x, self.y), self.radius)  # Red circle
 
+# Define the ball for pygame
 class Ball:
     def __init__(self):
         self.radius = 3
@@ -62,10 +66,6 @@ class Ball:
 class env(gym.Env):
     def __init__(self):
         super(env, self).__init__()
-        # define action and obs space
-        # TODO actually define spaces and timesteps and define how many players per team
-        self.action_space = spaces.Discrete(2)  # Two discrete actions
-        self.observation_space = spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32)
         self.state = 0  # Initial state
 
         # Define field widths and heights and bounds
@@ -87,14 +87,16 @@ class env(gym.Env):
         # Define number of players (both teams)
         self.num_players = 4
         # Define player speed
-        self.player_speed = 10
+        self.player_speed = 5
+        # Define max player speed
+        self.player_max_speed = 20
         # Define player sprint bar timer
         self.total_sprint_bar = 100
         # Define sprint speed
         self.sprint_speed = self.player_speed * 1.3
 
         # define passing velo
-        self.pass_velo = 10
+        self.pass_velo = 20
 
         # define meu friction
         self.meu_friction = 0.1
@@ -104,31 +106,88 @@ class env(gym.Env):
         self.step_reward = [0, 0]
 
         #define timesteps
-        self.max_steps = 100
+        self.max_steps = 5_000
         self.current_step = 0
+
+        # define action and obs space
+        # Define the action space
+        self.action_space = Tuple((
+            Discrete(6),
+            Discrete(5),
+            Discrete(2),
+            Discrete(2),
+            Discrete(2),
+        ))
+        # Repeat the action space 11 times
+        self.action_space = Tuple([self.action_space for i in range(4)])
+
+        # Define obs space
+        self.observation_space = Tuple((
+            Box(low=self.field_bounds_x, high=self.field_bounds_x + self.field_width, shape=(self.num_players, 2)),  # player_positions
+            Box(low=0, high=np.pi * 2, shape=(self.num_players,)),  # player_orientations
+            Box(low=0, high=self.player_max_speed, shape=(self.num_players, 2)),  # player_velos
+            Box(low=0, high=self.total_sprint_bar, shape=(self.num_players,)),  # player_sprint_bar
+            Discrete(2),  # ball_or_not
+            Discrete(2),  # last_possession
+            Box(low=self.field_bounds_x, high=self.field_bounds_x+self.field_width, shape=(2,)),  # ball_position
+            Box(low=0, high=20, shape=(2,))  # ball_velo
+        ))
+
 
     # Reset variables and enviornment
     def reset(self):
-        pass
+        # Reset all player positions, ball position, etc...
+        player_positions = [[0, 0] for i in range(self.num_players)]
+        half_num_players = self.num_players // 2
+        # Reset player positions
+        for i in range(half_num_players):
+            player_positions[i][0] = self.field_bounds_x + (self.field_width // 4)
+            player_positions[i][1] = self.field_bounds_y + (self.field_height // 2) + (i * 20)
+        for i in range(half_num_players):
+            player_positions[i + half_num_players][0] = self.field_bounds_x + (self.field_width // 4) * 3
+            player_positions[i + half_num_players][1] = self.field_bounds_y + (self.field_height // 2) + (i * 20)
+        player_velos = [[0, 0] for i in range(self.num_players)]
+
+
+        player_orientations = [0 for i in range(len(player_positions))] # Reset orientation
+        player_sprint_bars = [self.total_sprint_bar for i in range(len(player_positions))] # Reset sprint bars
+        ball_or_not = [0 for i in range(self.num_players)] # Reset ball or not
+        last_possession = [0, 0] # Reset last possession
+        ball_position = [self.field_bounds_x + self.field_width // 2, self.field_bounds_y + self.field_height // 2] # Reset ball position
+        ball_velo = [0, 0]
+
+
+        if self.render_mode == 'human':
+            pygame.init()
+            pygame.display.set_caption('Soccer')
+            self.display = pygame.display.set_mode((screen_width_ft, screen_height_ft))
+            self.font = pygame.font.SysFont('Arial_bold', 380)
+
+            # Create a Player object
+            self.player = Player()
+            # Create ball
+            self.ball = Ball()
+
+            self.render()
+
+        return [player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo]
 
 
 
     # Player orientation will be in radians. 0 radians will be facing to the "right" in the enviornment
-    def step(self, player_positions, player_orientations, player_velos, player_actions, player_sprint_bars, ball_or_not, last_possession, tackle_or_not, ball_position, ball_velo, ball_acceleration, timestep):
+    def step(self, obs, player_actions, timestep, render_mode = None):
+        # Split obs
+        player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo = self.split_obs(obs)
+
         # reset step_reward
         self.step_reward = [0, 0]
-
-        if timestep == 0:
-            # Reset player positions
-            for i in range(self.num_players // 2):
-                player_positions[i][0] = self.field_bounds_x + (self.field_width // 2) + (i * 20)
-                player_positions[i][1] = self.field_bounds_y + (self.field_height // 2)
 
         # Check whether ball is in goal or out of bounds or in goal
         terminated, possession, player_positions, player_velos, ball_or_not = self.check_ball_position(player_positions, player_velos, ball_position, last_possession)
 
         # Find reward based off of location
-        self.step_reward += self.ball_location_reward(ball_position)
+        reward = self.ball_location_reward(ball_position)
+        self.step_reward = [self.step_reward[i] + reward[i] for i in range(len(self.step_reward))]
 
         # Find new player and ball positions
         player_positions, player_velos, player_orientations, player_sprint_bar = self.player_position(player_positions, player_orientations, player_velos, player_actions, player_sprint_bars)
@@ -137,16 +196,46 @@ class env(gym.Env):
         # Check for collisions
         player_positions, player_velos = self.player_collision(player_positions, player_velos)
 
-        if timestep > self.max_steps:
-            truncated = True
-        else:
-            truncated = False
+        # Pass ball
+        for i in range(len(ball_or_not)):
+            if ball_or_not[i] == 1 and player_actions[i][4] == 1:
+                ball_velo = self.pass_ball(player_orientations[i])
 
-        # calculate friction
+        # Check tackles
+        ball_or_not = self.get_tackled(player_positions, player_orientations, player_actions)
+
+        # calculate new ball velo based on friction
         ball_velo = [(self.meu_friction * self.ball_weight) + ball_velo[i] for i in range(2)]
 
         # TODO: offsides?
-        return (player_positions, player_orientations, player_velos, player_sprint_bar, ball_or_not, last_possession, ball_position, ball_velo), self.step_reward, terminated, truncated
+
+        # Render
+        if self.render_mode == 'human':
+            self.render()
+
+        # Check max timesteps
+        truncated = self.terminated_or_not(timestep)
+
+        return [player_positions, player_orientations, player_velos, player_sprint_bar, ball_or_not, last_possession, ball_position, ball_velo], self.step_reward, terminated, truncated
+
+    # Convert discrete actions to binary list to pass into step function
+    def convert_discrete_action_to_binary_list(self, action):
+        # TODO redefine function so it's 3d list instead of one player then another...
+        # Make is so it's like [[positions], [orientations]... ]
+        total_actions = []
+        player_velos = []
+        player_orientations = []
+        player_sprinting = []
+        player_tackling = []
+        player_passing = []
+        for i in range(self.num_players):
+            for j in range(5): # Number of possible of actions
+                player_velos.append(1 if action[i][j] == k else 0 for k in range(self.action_space.spaces[i][j].n))
+                player_orientations.append(1 if action[i][j] == k else 0 for k in range(self.action_space.spaces[i][j].n))
+                player_tackling.append(1 if action[i][j] == k else 0 for k in range(self.action_space.spaces[i][j].n))
+                player_sprinting.append(1 if action[i][j] == k else 0 for k in range(self.action_space.spaces[i][j].n))
+                player_passing.append(1 if action[i][j] == k else 0 for k in range(self.action_space.spaces[i][j].n))
+        return [list(player_velos), list(player_orientations), list(player_sprinting), list(player_tackling), list(player_passing)]
 
     # Check whether the episode reached max length
     def terminated_or_not(self, timestep):
@@ -180,8 +269,11 @@ class env(gym.Env):
            self.step_reward[0] += 1
            self.step_reward[1] -= 1
 
+        else:
+            terminated = False
+
         # If ball is out for a corner kick or goal kick
-        elif ball_position[0] < self.field_bounds_x or ball_position > self.field_width + self.field_bounds_x:
+        if ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_width + self.field_bounds_x:
             new_possession = last_possession.reverse() # create new posession
 
             # Define new x coordinate for ball depending on which side it went out on
@@ -285,7 +377,7 @@ class env(gym.Env):
 
     # find closest player to the ball depending on who has possession
     def closest_player(self, new_possession, player_positions, ball_position):
-        other_team = player_positions // 2
+        other_team = len(player_positions) // 2
         if new_possession == [1, 0]:
             for i in player_positions:
                 distance = self.find_distance(player_positions[i][0], player_positions[i][1], ball_position[0],
@@ -308,10 +400,16 @@ class env(gym.Env):
         if ball_position[0] > (self.field_width/2) + self.field_bounds_x:
             # distance formula stuff and fraction of that for reward
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x2, self.center_goal_position_y)
-            return [1 / 2 * distance, -1 / 2 * distance]
+            if 1 / (2 * distance) < .5:
+                return [1 / (2 * distance), -1 / (2 * distance)]
+            else:
+                return [0.5, -0.5]
         else:
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x1, self.center_goal_position_y)
-            return [-1 / 2 * distance, 1 / 2 * distance]
+            if 1 / (2 * distance) < .5:
+                return [-1 / (2 * distance), 1 / (2 * distance)]
+            else:
+                return [-0.5, 0.5]
 
     # Pass ball function: calculate new velo for ball
     def pass_ball(self, player_orientation):
@@ -359,12 +457,10 @@ class env(gym.Env):
         # Initialize an empty list to store the new possession
         new_possession = [0] * len(player_positions)
 
-        player_tackled_or_not = player_actions[3]
-
         # Loop through each player
         for i in range(len(player_positions)):
             # Check if the player wants to tackle
-            if player_tackled_or_not[i]:
+            if player_actions[i][3]:
                 # Get the player's orientation and position
                 player1_orientation = player_orientation[i]
                 player1_position = player_positions[i]
@@ -399,6 +495,7 @@ class env(gym.Env):
                             else:
                                 self.step_reward[0] -= .1
                                 self.step_reward[1] += .1
+        return new_possession
 
     # Find what player action is taken and add to player velo
     # assuming player_action is a list len 6 binary and 1 and 0th index
@@ -414,7 +511,7 @@ class env(gym.Env):
             player_action_velo, new_orientation = self.generate_velocity_vector_and_orientation(player_actions[i], player_velos[i], player_orientations[i])
 
             # Check if player is sprinting
-            if player_actions[i][3]:
+            if player_actions[i][2]:
                 new_player_sprint_bar = player_sprint_bars[i] - 5
             else:
                 new_player_sprint_bar = player_sprint_bars[i] + 2
@@ -430,14 +527,11 @@ class env(gym.Env):
         return new_pos, player_action_velos, new_orientations, new_player_sprint_bars
 
     def generate_velocity_vector_and_orientation(self, player_action, player_velo, player_orientation):
-        # find index of player action
-        index0 = player_action[0].index(1)
-
         # Define the angles in radians
         angles_in_radians = [np.pi / 6, np.pi / 12, 0, -np.pi / 12, -np.pi / 6, np.pi]
 
         # Find the angle based on the input index
-        angle = angles_in_radians[index0]
+        angle = angles_in_radians[player_action[0]]
 
         # Check if player is sprinting or not
         if player_action[2]:
@@ -447,12 +541,8 @@ class env(gym.Env):
             # Create the velocity vector and multiply by player speed
             velocity = np.array([np.cos(angle) * self.player_speed, np.sin(angle) * self.player_speed])
 
-
-        # Find index of player orientation
-        index1 = player_action[1].index(1)
-
         # Find angle based on input index
-        angle = angles_in_radians[index1]
+        angle = angles_in_radians[player_action[1]]
 
         # Find new orientation
         new_orientation = player_orientation + angle
@@ -465,6 +555,12 @@ class env(gym.Env):
                 break
 
         final_velo = np.round(velocity, 5) + player_velo
+        mag_final_velo = self.find_distance(velocity[0], velocity[1], 0, 0)
+        if mag_final_velo > self.player_max_speed:
+            # Normalize and then multiply by max_speed
+            final_velo[0] = (final_velo[0] // mag_final_velo) * self.player_max_speed
+            final_velo[1] = (final_velo[1] // mag_final_velo) * self.player_max_speed
+
 
         return final_velo, new_orientation
 
@@ -496,9 +592,9 @@ class env(gym.Env):
     def player_collision(self, player_positions, player_velos):
         new_player_positions = player_positions
         new_player_velos = player_velos
-        other_team = player_positions // 2
-        for i in player_positions // 2:
-            for j in player_positions // 2:
+        other_team = len(player_positions) // 2
+        for i in range(len(player_positions) // 2):
+            for j in range(len(player_positions) // 2):
                 # Find distance between players
                 distance = self.find_distance(player_positions[i][0], player_positions[i][1], player_positions[j + other_team][0], player_positions[j + other_team][1])
                 if distance < 3:
@@ -556,62 +652,55 @@ class env(gym.Env):
             for i in range(other_team):
                 # Check if the opposing team player is closer to the ball than the second-to-last defender (i.e. the goalkeeper)
                 if opposing_team_player_position[0] < second_last_defender:
-                    self.step_reward[0] -= .3
-                    self.step_reward[1] += .3
+                    self.step_reward[0] -= .2
+                    self.step_reward[1] += .2
 
-
-
+    # Split obs
+    def split_obs(self, obs):
+        print("Observations:", obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7])
+        return obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7]
 
     def render(self, mode='human'):
-        print(f"Current state: {self.state}")
+        # TODO: Fix drawing players and controls and what not.... prob after i define nns
+        # Fill the background with green
+        screen.fill((50, 168, 82))
+
+        # Draw field
+        # Draw outside box
+        pygame.draw.rect(screen, (0, 0, 0), (box_x, box_y, box_width, box_height), 3)  # Black bounding line, 3 pixels thick
+        pygame.draw.rect(screen, (50, 168, 82), (box_x + 3, box_y + 3, box_width - 6, box_height - 6))  # green
+        # Center circle
+        pygame.draw.circle(screen, (0, 0, 0), (screen_width_ft // 2, screen_height_ft // 2), 30)
+        pygame.draw.circle(screen, (50, 168, 82), (screen_width_ft // 2, screen_height_ft // 2), 28)
+        # Draw midline
+        pygame.draw.rect(screen, (0, 0, 0), (center_x - 1, center_y - (box_height / 2), 2, box_height))
+        # Draw goals
+        # Goal #1:
+        pygame.draw.rect(screen, (0, 0, 0), (box_x - 17, center_y - 24, 17, 48))
+        # Goal #2:
+        pygame.draw.rect(screen, (0, 0, 0), (box_x + box_width, center_y - 24, 17, 48))
+
+        # Move and draw the player
+        pressed_keys = pygame.key.get_pressed()
+        self.player.move(pressed_keys)
+        self.player.draw(screen)
+
+        self.ball.draw(screen)
+
+        # Flip the display
+        pygame.display.flip()
+
+
 
     def close(self):
-        # TODO make sure pygame window is closed if render mode is on
-        pass
+        pygame.quit()
 
-
-
-# Create a Player object
-player = Player()
-# Create ball
-ball = Ball()
-
-# Run until the user asks to quit
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    # Fill the background with green
-    screen.fill((50, 168, 82))
-
-    # Draw field
-    # Draw outside box
-    pygame.draw.rect(screen, (0, 0, 0), (box_x, box_y, box_width, box_height), 3)  # Black bounding line, 3 pixels thick
-    pygame.draw.rect(screen, (50, 168, 82), (box_x + 3, box_y + 3, box_width - 6, box_height - 6))  # green
-    # Center circle
-    pygame.draw.circle(screen, (0, 0, 0), (screen_width_ft // 2, screen_height_ft // 2), 30)
-    pygame.draw.circle(screen, (50, 168, 82), (screen_width_ft // 2, screen_height_ft // 2), 28)
-    # Draw midline
-    pygame.draw.rect(screen, (0, 0, 0), (center_x - 1, center_y - (box_height/2), 2, box_height))
-    # Draw goals
-    # Goal #1:
-    pygame.draw.rect(screen, (0, 0, 0), (box_x - 17, center_y - 24, 17, 48))
-    # Goal #2:
-    pygame.draw.rect(screen, (0, 0, 0), (box_x + box_width, center_y - 24, 17, 48))
-
-
-
-    # Move and draw the player
-    pressed_keys = pygame.key.get_pressed()
-    player.move(pressed_keys)
-    player.draw(screen)
-
-    ball.draw(screen)
-
-    # Flip the display
-    pygame.display.flip()
-
-# Done! Time to quit.
-pygame.quit()
+Env = env()
+obs = Env.reset()
+actions = Env.action_space.sample() # Sample action for action space
+max_timestep = 5_000
+print(actions)
+obs, reward, terminated, truncated = Env.step(obs, actions, 5000)
+print("New Observations:", obs)
+print(reward)
+print(terminated, truncated)

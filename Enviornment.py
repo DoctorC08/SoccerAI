@@ -220,7 +220,6 @@ class env(gym.Env):
 
     # Convert discrete actions to binary list to pass into step function
     def convert_discrete_action_to_binary_list(self, action):
-        # TODO redefine function so it's 3d list instead of one player then another...
         # Make is so it's like [[positions], [orientations]... ]
         total_actions = []
         player_velos = []
@@ -304,7 +303,7 @@ class env(gym.Env):
         elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_height + self.field_bounds_y:
             new_possession = last_possession.reverse()
             # Create new ball position so ball isn't out of bounds
-            if ball_position[1] < self.field_bounds_y:
+            if ball_position[1] < self.field_bounds_y: 
                 new_ball_position[1] = self.field_bounds_y
             else:
                 new_ball_position[1] = self.field_bounds_y + self.field_height

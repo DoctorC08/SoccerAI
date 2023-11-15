@@ -1,4 +1,7 @@
-import gymnasium as gym
+# Networks.py
+# by christophermao
+# 11/13/23
+
 import math
 import random
 import matplotlib
@@ -58,6 +61,7 @@ class DQN(nn.Module):
 
 class Agent:
     def __init__(self, env):
+        self.env = env
         self.BATCH_SIZE = 128    # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99        # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = 0.9     # EPS_START is the starting value of epsilon
@@ -148,7 +152,7 @@ class Agent:
         for i_episode in range(num_episodes):
             print(f"Starting Training for {i_episode} Episode")
             # Initialize the environment and get it's state
-            state, info = env.reset()
+            state, info = self.env.reset()
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             for t in count():
                 action = self.select_action(state)
@@ -208,12 +212,3 @@ class Agent:
             if not show_result:
                 plt.show()  # Display the plot in the console
 
-
-# Create an instance of the environment
-env = gym.make("CartPole-v1")
-
-# Create an instance of the Agent and train the model
-agent = Agent(env)
-agent.train()
-plt.ioff()
-plt.show()

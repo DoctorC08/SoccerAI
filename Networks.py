@@ -73,15 +73,18 @@ class Agent:
         self.episode_durations = []
 
         # Get number of actions from gym action space
-        n_actions = env.action_space.n
+        n_actions = self.extract_action_space_numbers(self.Env.action_space)
+        n_actions = n_actions[:len(n_actions)//2]
         # Get the number of state observations
-        state, info = env.reset()
+        state = env.reset()
         n_observations = len(state)
 
-
+        # Declare policy and target nets
         self.policy_net = DQN(n_observations, n_actions).to(device)
         self.target_net = DQN(n_observations, n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
+
+        self.policy_net2 = DQN(n_observations, n_actions).to(device)
 
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
         self.memory = ReplayMemory(10000)
@@ -100,7 +103,7 @@ class Agent:
                 # found, so we pick action with the larger expected reward.
                 return self.policy_net(state).max(1)[1].view(1, 1)
         else:
-            return torch.tensor([[env.action_space.sample()]], device=device, dtype=torch.long)
+            return torch.tensor([[self.env.action_space.sample()]], device=device, dtype=torch.long)
 
 
     def optimize_model(self):
@@ -152,11 +155,12 @@ class Agent:
         for i_episode in range(num_episodes):
             print(f"Starting Training for {i_episode} Episode")
             # Initialize the environment and get it's state
-            state, info = self.env.reset()
+            state = self.env.reset()
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             for t in count():
                 action = self.select_action(state)
-                observation, reward, terminated, truncated, _ = env.step(action.item())
+                observation, reward, terminated, truncated, _ = self.env.step(action.item())
+                self.episode_reward = reward
                 reward = torch.tensor([reward], device=device)
                 done = terminated or truncated
 
@@ -194,21 +198,26 @@ class Agent:
         plt.figure(1)
         durations_t = torch.tensor(self.episode_durations, dtype=torch.float)
 
-        if show_result or episode_number % 60 == 0:
-            if show_result:
-                plt.title('Result')
-            else:
-                plt.clf()
-                plt.title('Training...')
-            plt.xlabel('Episode')
-            plt.ylabel('Duration')
-            plt.plot(durations_t.numpy())
-            if len(durations_t) >= 100:
-                means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-                means = torch.cat((torch.zeros(99), means))
-                plt.plot(means.numpy())
+        if show_result:
+            plt.title('Result')
+        else:
+            plt.clf()
+            plt.title('Training...')
+        plt.xlabel('Episode')
+        plt.ylabel('Rewards')
+        plt.plot(durations_t.numpy())
+        if len(durations_t) >= 100:
+            means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
+            means = torch.cat((torch.zeros(99), means))
+            plt.plot(means.numpy())
 
-            plt.pause(0.001)
-            if not show_result:
-                plt.show()  # Display the plot in the console
+        plt.pause(0.001)
+        if not show_result:
+            plt.show()  # Display the plot in the console
 
+    def extract_action_space_numbers(self, action_space):
+        action_space_numbers = []
+        for agent_action_space in action_space:
+            for action_dim_space in agent_action_space:
+                action_space_numbers.append(action_dim_space.n)
+        return action_space_numbers

@@ -112,14 +112,13 @@ class env(gym.Env):
         # define action and obs space
         # Define the action space
         self.action_space = Tuple((
-            Discrete(6),
-            Discrete(5),
+            Discrete(4),
+            Discrete(3),
             Discrete(2),
-            Discrete(2),
-            Discrete(2),
+            Discrete(3)
         ))
-        # Repeat the action space 11 times
-        self.action_space = Tuple([self.action_space for i in range(4)])
+        # Repeat the action space num player times
+        self.action_space = Tuple([self.action_space for i in range(self.num_players)])
 
         # Define obs space
         self.observation_space = Tuple((
@@ -170,7 +169,7 @@ class env(gym.Env):
 
             self.render()
 
-        return [player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo]
+        return self.return_obs([player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo])
 
 
 
@@ -198,7 +197,7 @@ class env(gym.Env):
 
         # Pass ball
         for i in range(len(ball_or_not)):
-            if ball_or_not[i] == 1 and player_actions[i][4] == 1:
+            if ball_or_not[i] == 1 and player_actions[i][3] == 2:
                 ball_velo = self.pass_ball(player_orientations[i])
 
         # Check tackles
@@ -216,7 +215,7 @@ class env(gym.Env):
         # Check max timesteps
         truncated = self.terminated_or_not(timestep)
 
-        return [player_positions, player_orientations, player_velos, player_sprint_bar, ball_or_not, last_possession, ball_position, ball_velo], self.step_reward, terminated, truncated
+        return self.return_obs([player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo]), self.step_reward, terminated, truncated
 
     # Convert discrete actions to binary list to pass into step function
     def convert_discrete_action_to_binary_list(self, action):
@@ -459,7 +458,7 @@ class env(gym.Env):
         # Loop through each player
         for i in range(len(player_positions)):
             # Check if the player wants to tackle
-            if player_actions[i][3]:
+            if player_actions[i][3] == 1:
                 # Get the player's orientation and position
                 player1_orientation = player_orientation[i]
                 player1_position = player_positions[i]
@@ -527,10 +526,11 @@ class env(gym.Env):
 
     def generate_velocity_vector_and_orientation(self, player_action, player_velo, player_orientation):
         # Define the angles in radians
-        angles_in_radians = [np.pi / 6, np.pi / 12, 0, -np.pi / 12, -np.pi / 6, np.pi]
+        angles_in_radians = [np.pi / 12, 0, -np.pi / 12]
+        pos_angles_in_radians = [np.pi / 12, 0, -np.pi / 12, np.pi]
 
         # Find the angle based on the input index
-        angle = angles_in_radians[player_action[0]]
+        angle = pos_angles_in_radians[player_action[0]]
 
         # Check if player is sprinting or not
         if player_action[2]:
@@ -656,8 +656,33 @@ class env(gym.Env):
 
     # Split obs
     def split_obs(self, obs):
-        print("Observations:", obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7])
+        # print("Observations:", obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7])
         return obs[0], obs[1], obs[2], obs[3], obs[4], obs[5], obs[6], obs[7]
+
+    # Return obs to network as a 1d list
+    def return_obs(self, obs):
+        new_list = [self.flatten_list_of_lists(obs[0])]
+        new_list.append(obs[1])
+        new_list.append(self.flatten_list_of_lists(obs[2]))
+        new_list.append(obs[3])
+        new_list.append(obs[4])
+        new_list.append(obs[5])
+        new_list.append(obs[6])
+        new_list.append(obs[7])
+
+        new_list = self.flatten_list_of_lists(new_list)
+
+        return new_list
+
+    # Flatten 2d lists into 1d lists
+    def flatten_list_of_lists(self, nested_list):
+        flat_list = []
+        try:
+            for sublist in nested_list:
+                flat_list.extend(sublist)
+            return flat_list
+        except:
+            return nested_list
 
     def render(self, mode='human'):
         # TODO: Fix drawing players and controls and what not.... prob after i define nns
@@ -694,12 +719,12 @@ class env(gym.Env):
     def close(self):
         pygame.quit()
 
-Env = env()
-obs = Env.reset()
-actions = Env.action_space.sample() # Sample action for action space
-max_timestep = 5_000
-print(actions)
-obs, reward, terminated, truncated = Env.step(obs, actions, 5000)
-print("New Observations:", obs)
-print(reward)
-print(terminated, truncated)
+# Env = env()
+# obs = Env.reset()
+# actions = Env.action_space.sample() # Sample action for action space
+# max_timestep = 5_000
+# print(actions)
+# obs, reward, terminated, truncated = Env.step(obs, actions, 0)
+# print("New Observations:", obs)
+# print(reward)
+# print(terminated, truncated)

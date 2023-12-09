@@ -15,8 +15,8 @@ from Networks import Agent
 from Enviornment import env
 
 import copy
-
 import pandas as pd
+import time
 
 # Define Verbose
 global verbose
@@ -301,7 +301,6 @@ def create_agents(n_agents, total_n_actions, n_obs):
     return agents
 
 # Define matchups and create performance matrix
-import time
 def matchups(agents, n_episodes, env, render_mode = False):
     n_agents = len(agents)
     data = {}
@@ -323,11 +322,9 @@ def matchups(agents, n_episodes, env, render_mode = False):
     print(data)
 
 
-
-
 # Create an instance of the Agent and enviornment and train the model
 env = env()
-n_agents = 3
+n_agents = 20
 # Reset env and get obs length
 state, n_obs = env.reset()
 
@@ -344,15 +341,17 @@ for i in range(len(n_actions) // 2):
     total_n_actions.append(n_actions[i] ** 2)
 if verbose:
     print("total_n_actions: ", total_n_actions)
-
-
-# Initialize agents for different action sets
-Agents = create_agents(n_agents, total_n_actions, n_obs)
-matchups(Agents, 1, env, render_mode=False)
-
-plt.ioff()
-plt.show()
 model_path = "/Users/christophermao/Desktop/RLModels"
-for i in range(len(Agents)):
-    for agent in Agents[i]:
-        torch.save(agent.state_dict(), model_path)
+
+# Train for 100,000 round-robins
+for i in range(100_000):
+    # Initialize agents for different action sets
+    Agents = create_agents(n_agents, total_n_actions, n_obs)
+    matchups(Agents, 1, env, render_mode=False)
+
+    plt.ioff()
+    plt.show()
+    if i % 1000:
+        for i in range(len(Agents)):
+            for agent in Agents[i]:
+                torch.save(agent.state_dict(), model_path)

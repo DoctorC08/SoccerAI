@@ -49,30 +49,37 @@ class ReplayMemory(object):
 
 class DQN(nn.Module):
 
-    def __init__(self, n_observations, n_actions): #TODO look up if there is a more efficient way to do this:
+    def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 256)
-        self.layer2 = nn.Linear(256, 128)
-        # self.layer2 = nn.Linear(8192, 4096)
-        # self.layer3 = nn.Linear(4096, 4096)
-        # self.layer4 = nn.Linear(4096, 4096)
-        # self.layer5 = nn.Linear(4096, 2048)
-        # self.layer6 = nn.Linear(2048, 1024)
-        # self.layer7 = nn.Linear(2048, 1024)
-        # self.layer8 = nn.Linear(1024, 1024)
-        # self.layer9 = nn.Linear(1024, 512)
-        # self.layer10 = nn.Linear(512, 256)
-        # self.layer11 = nn.Linear(512, 256)
-        # self.layer12 = nn.Linear(256, 128)
-        self.layer3 = nn.Linear(128, n_actions)
-
-    # Called with either one element to determine next action, or a batch
-    # during optimization. Returns tensor([[left0exp,right0exp]...]).
+        self.model = nn.Sequential(
+            nn.Linear(n_observations, 4096),
+            nn.ReLU(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(),
+            nn.Linear(4096, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, n_actions),
+        )
     def forward(self, x):
-        # print("input for forward func:", x[:100])
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        return self.layer3(x)
+        return self.model(x)
 
 class Agent:
     def __init__(self, n_actions, n_observations):

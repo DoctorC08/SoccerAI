@@ -1,15 +1,26 @@
-import gym
-from gym.spaces import Box, Tuple, Discrete
-from Enviornment import env
+import gymnasium as gym
+import math
+import random
+import matplotlib
+import matplotlib.pyplot as plt
+from collections import namedtuple, deque
+from itertools import count
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+
 import numpy as np
-Env = env()
 
-state = Env.reset()
-n_observations = len(state)
-print(state)
-print(n_observations)
+# from Enviornment import env
+import torch
 
+import matplotlib.pyplot as plt
+import numpy
+from sklearn import metrics
 
-print(Env.action_space)
-print((4 * 3 * 2 * 3) ** 2) # Action space possibilities
+import pandas as pd
 
+for i in range(0, 10, 2):
+    print(i)

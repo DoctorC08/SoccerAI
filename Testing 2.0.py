@@ -17,3 +17,10 @@ from Enviornment import env
 import copy
 
 import pandas as pd
+
+list = [1, 0]
+val = 0
+try:
+    print(list + val)
+except:
+    pass

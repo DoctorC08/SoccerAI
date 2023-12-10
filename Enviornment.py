@@ -23,7 +23,6 @@ field_height = 225
 # Set up the drawing window
 screen_width_ft = (field_width + 10 + 10) * 2 # 10 feet on each side
 screen_height_ft = (field_height + 20 + 20) * 2  # 20 feet on each side
-screen = pygame.display.set_mode([screen_width_ft, screen_height_ft])
 
 # Calculate the center of the screen
 center_x = screen_width_ft // 2
@@ -135,6 +134,7 @@ class env(gym.Env):
         # define meu friction
         self.meu_friction = 0.1
         self.ball_weight = 0.45
+        self.meu_friction_force = self.meu_friction * self.ball_weight
 
         # Step function!
         self.step_reward = [0, 0]
@@ -262,8 +262,10 @@ class env(gym.Env):
         # Check tackles
         ball_or_not = self.get_tackled(player_positions, player_orientations, player_actions[0], ball_or_not)
         ball_or_not = self.get_tackled(player_positions, player_orientations, player_actions[1], ball_or_not)
+
         # calculate new ball velo based on friction
-        ball_velo = [(self.meu_friction * self.ball_weight) + ball_velo[i] for i in range(2)]
+        if ball_velo[0] > 0 or ball_velo[1] > 0:
+            ball_velo = [(self.meu_friction_force) + ball_velo[i] for i in range(2)]
         if verbose:
             print("224 check player positions:", player_positions)
             print("224 ball or not", ball_or_not)
@@ -457,7 +459,7 @@ class env(gym.Env):
     # find closest player to the ball depending on who has possession
     def closest_player(self, new_possession, player_positions, ball_position):
         other_team = self.num_players // 2
-        shortest_distance = 10_000 # placeholder value
+        shortest_distance = 100_000_000_000 # placeholder value
         if new_possession == [1, 0]:
             for i in range(self.num_players // 2):
                 if verbose:
@@ -569,13 +571,9 @@ class env(gym.Env):
     # Get tackled if enemy is close and tackles and player has ball
     # player_tackled_or_not should be a whole list of 0s and 1s determining if they decided to or not
     def get_tackled(self, player_positions, player_orientation, player_actions, new_possession):
-        # print("player actions - 1 get tackled func:", f_player_actions)
-        # player_actions = f_player_actions[0]
-        # player_actions.append(f_player_actions[1])
-        # # Initialize an empty list to store the new possession
+        # Initialize an empty list to store the new possession
         if verbose:
             print("player actions - get tackled func:", player_actions)
-        # list = [[tensor(1), tensor(1), tensor(1), tensor(1)], [tensor(2), 2, tensor(1), tensor(1)]], [[tensor(0), tensor([[1]]), tensor(-1), tensor(2)], [tensor(2), tensor([[2]]), 1, 2]]
 
         # Loop through each player
         for i in range(self.num_players // 2):
@@ -926,7 +924,7 @@ class env(gym.Env):
         return flat_list
 
     def render(self, player_positions, player_orientations, player_velos, player_sprint_bars, ball_position, ball_velo, timestep, mode='human'):
-        # TODO: Fix drawing players and controls and what not....
+        screen = pygame.display.set_mode([screen_width_ft, screen_height_ft])
         # Fill the background with green
         screen.fill((50, 168, 82))
 
@@ -969,5 +967,3 @@ class env(gym.Env):
 
     def close(self):
         pygame.quit()
-
-#

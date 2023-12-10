@@ -52,20 +52,18 @@ class DQN(nn.Module):
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(n_observations, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.Linear(n_observations, 128),
+            nn.Mish(),
+            nn.Linear(128, 256),
+            nn.Mish(),
+            nn.Linear(256, 256),
+            nn.Mish(),
             nn.Linear(256, 512),
-            nn.ReLU(),
+            nn.Mish(),
             nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.Mish(),
             nn.Linear(256, 128),
-            nn.ReLU(),
+            nn.Mish(),
             nn.Linear(128, n_actions),
         )
     def forward(self, x):
@@ -178,6 +176,14 @@ class Agent:
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
+
+    def convert_list_of_tensors_to_tensor(self, tensor_list):
+        list_of_tensors = [torch.tensor(item) for sublist in tensor_list for item in sublist]
+        stacked_tensor = torch.stack(list_of_tensors, dim=0)
+        return stacked_tensor
+
+
+
 # training and plot duration funcs:
     #
     # def train(self, num_episodes = 600):
@@ -243,8 +249,3 @@ class Agent:
     #     plt.pause(0.001)
     #     if not show_result:
     #         plt.show()  # Display the plot in the console #
-
-    def convert_list_of_tensors_to_tensor(self, tensor_list):
-        list_of_tensors = [torch.tensor(item) for sublist in tensor_list for item in sublist]
-        stacked_tensor = torch.stack(list_of_tensors, dim=0)
-        return stacked_tensor

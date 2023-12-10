@@ -315,7 +315,6 @@ def matchups(agents, n_episodes, env, render_mode = False):
                 print("Playing agent", i, "and agent", j + 1, f"for {n_episodes} episodes")
                 rewards = train([agents[i], agents[j + 1]], env, render_mode, n_episodes)
                 data[(i, j + 1)] = rewards
-            time.sleep(4)
     agent_names = [f"Agent {i}" for i in range(len(agents))]
     matrix = performance_matrix(data, agent_names)
     print(matrix)

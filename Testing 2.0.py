@@ -18,9 +18,5 @@ import copy
 
 import pandas as pd
 
-list = [1, 0]
-val = 0
-try:
-    print(list + val)
-except:
-    pass
+tensor_2d = torch.tensor([-0.9533]).reshape(1, 1)
+print(tensor_2d)

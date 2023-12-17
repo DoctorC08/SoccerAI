@@ -4,6 +4,8 @@
 
 import math
 import random
+import time
+
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
@@ -13,6 +15,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+
+import copy
 
 global verbose
 verbose = False
@@ -50,21 +54,16 @@ class ReplayMemory(object):
 class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
+        print("n_obs and n_acts:", n_observations, n_actions)
         super(DQN, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(n_observations, 128),
+            nn.Linear(n_observations, 32),
             nn.Mish(),
-            nn.Linear(128, 256),
+            nn.Linear(32, 32),
             nn.Mish(),
-            nn.Linear(256, 256),
+            nn.Linear(32, 32),
             nn.Mish(),
-            nn.Linear(256, 512),
-            nn.Mish(),
-            nn.Linear(512, 256),
-            nn.Mish(),
-            nn.Linear(256, 128),
-            nn.Mish(),
-            nn.Linear(128, n_actions),
+            nn.Linear(32, n_actions)
         )
     def forward(self, x):
         return self.model(x)
@@ -72,8 +71,8 @@ class DQN(nn.Module):
 class Agent:
     def __init__(self, n_actions, n_observations):
         self.n_actions = n_actions
-        self.n_agents = 50                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 3_000 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.n_agents = 10                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
+        self.BATCH_SIZE = 200 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = 0.9                    # EPS_START is the starting value of epsilon
         self.EPS_END = 0.05                     # EPS_END is the final value of epsilon
@@ -88,10 +87,8 @@ class Agent:
         self.target_net = DQN(n_observations, n_actions).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        self.policy_net2 = DQN(n_observations, n_actions).to(device)
-
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
-        self.memory = ReplayMemory(10000)
+        self.memory = ReplayMemory(10_000)
 
         self.steps_done = 0
 
@@ -105,9 +102,11 @@ class Agent:
                 # t.max(1) will return the largest column value of each row.
                 # second column on max result is index of where max element was
                 # found, so we pick action with the larger expected reward.
-                return self.policy_net(state).max(1)[1].view(1, 1)
+                # print("SELECTED ACTION", self.policy_net(state).max(1).indices.view(1, 1))
+                return self.policy_net(state).max(1).indices.view(1, 1)
         else:
-            return torch.tensor(random.randint(0, self.n_actions), device=device, dtype=torch.long)
+            # print("RANDOM ACTION")
+            return torch.tensor(random.randint(0, self.n_actions - 1), device=device, dtype=torch.long)
 
 
     def optimize_model(self):
@@ -129,12 +128,14 @@ class Agent:
             print("batch state len:", len(batch.state))
             print("batch reward len:", len(batch.reward))
             print("batch action len:", len(batch.action))
+            # print("batch state", batch.state)
+            # print("batch reward", batch.reward)
+            # print("batch action", batch.action)
 
-        # make batchese tensor
-        # batch.state = torch.tensor(batch.state)
-        # print("batch.state:", batch.state)
+        # make batches a tensor
         state_batch = torch.stack(batch.state, dim=0)
         action_batch = torch.stack(batch.action, dim=0)
+        action_batch = action_batch.view(self.BATCH_SIZE, 1)
         reward_batch = torch.squeeze(torch.stack(batch.reward, dim=0))
         if verbose:
             print("batch state len:", len(state_batch))
@@ -154,14 +155,14 @@ class Agent:
         # state value or 0 in case the state was final.
         next_state_values = torch.zeros(self.BATCH_SIZE, device=device)
         with torch.no_grad():
-            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0]
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1).values
         # Compute the expected Q values
         expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
         if verbose:
             print("next state values:", next_state_values.shape)
             # print("sample next state values:", next_state_values[:10])
             print("reward batch:", reward_batch.shape)
-            print("sample reward batch:", reward_batch)
+            # print("sample reward batch:", reward_batch)
             print("state action values:", state_action_values.shape)
             print("expected state action values:", expected_state_action_values.shape)
             # print("sample expected state action values:", expected_state_action_values[:10][:10])
@@ -182,6 +183,9 @@ class Agent:
         stacked_tensor = torch.stack(list_of_tensors, dim=0)
         return stacked_tensor
 
+    def save_models(self, model_path):
+        torch.save(self.policy_net, model_path + "_policy_net")
+        torch.save(self.target_net, model_path + "_targe_net")
 
 
 # training and plot duration funcs:

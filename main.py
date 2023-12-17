@@ -18,6 +18,8 @@ import copy
 import pandas as pd
 import time
 
+from torch.optim import AdamW
+
 # Define Verbose
 global verbose
 verbose = False
@@ -93,8 +95,16 @@ def test(Agents, env, render_mode, num_episodes=600): # Agents is a list of Agen
 
 # Def train
 def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Agents
+    # TODO: take training time data
     rewards0 = []
     rewards1 = []
+    time0 = []
+    time1 = []
+    time2 = []
+    time3 = []
+    time4 = []
+    time5 = []
+    time6 = []
 
     for i_episode in range(num_episodes):
         print(f"Starting Training for {i_episode} Episode")
@@ -110,6 +120,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             if verbose:
                 print("observation:", observation, "len obs:", len(observation[0]))
             # Get actions from agents
+            start_time = time.time()
             action1 = []
             action2 = []
             for j in range(len(Agents)):
@@ -145,7 +156,10 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             if verbose:
                 print("action1:", new_action1)
                 print("action2:", new_action2)
+            end_time = time.time()
+            time0.append(end_time-start_time)
 
+            start_time = time.time()
             # Lower obs space for step function
             observation, reward, terminated, truncated = env.step(observation, [new_action1, new_action2], t, render_mode)
             reward = reward.clone().detach()
@@ -159,16 +173,20 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
 
             total_actions = [16, 9, 4, 9]
 
+            end_time = time.time()
+            time1.append(end_time - start_time)
+
             # Check if it's agent type 1 or two
             # print("len agents:", len(Agents))
             # print("agent:", agent)
+            start_time = time.time()
             for agent in range(len(Agents[0])):
                 # Store the transition in memory
                 if verbose:
                     print(f"storing in {agent}th agent", torch.tensor(action1[agent]))
                     print(f"storing in {agent}th agent", torch.tensor(next_state))
                     print(f"storing in {agent}th agent", torch.tensor(next_state).shape)
-                Agents[0][agent].memory.push(observation, torch.tensor(one_hot_to_binary(action1[agent], total_actions[agent])), next_state, torch.tensor(reward[0]))
+                Agents[0][agent].memory.push(observation, torch.tensor(one_hot_to_binary(action1[agent], total_actions[agent])), next_state, reward[0].clone().detach())
 
             for agent in range(len(Agents[1])):
                 # Store the transition in memory
@@ -176,8 +194,12 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                     print(f"storing in {agent}th agent", torch.tensor(action1[agent - (len(Agents) // 2)]))
                     print(f"storing in {agent}th agent", torch.tensor(next_state))
                     print(f"storing in {agent}th agent", torch.tensor(next_state).shape)
-                Agents[1][agent].memory.push(observation, torch.tensor(one_hot_to_binary(action2[agent], total_actions[agent])), next_state, torch.tensor(reward[1]))
+                Agents[1][agent].memory.push(observation, torch.tensor(one_hot_to_binary(action2[agent], total_actions[agent])), next_state, reward[1].clone().detach())
 
+            end_time = time.time()
+            time2.append(end_time - start_time)
+
+            start_time = time.time()
             # Move to the next state
             observation = next_state
             for i in range(len(Agents)):
@@ -187,25 +209,69 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                         print("Agent num:", Agents.index(agent))
                         # Perform one step of the optimization (on the policy network)
                         print("timestep:", t)
+                    start_timea = time.time()
                     agent.optimize_model()
+                    end_timea = time.time()
+                    time4.append(end_timea-start_timea)
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
                     target_net_state_dict = agent.target_net.state_dict()
                     policy_net_state_dict = agent.policy_net.state_dict()
+
                     for key in policy_net_state_dict:
                         target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (
                                     1 - agent.TAU)
                     agent.target_net.load_state_dict(target_net_state_dict)
+
+                    time6.append(time.time()-end_timea)
             rewards0.append(reward[0])
             rewards1.append(reward[1])
+
+            end_time = time.time()
+            time3.append(end_time - start_time)
 
             if done:
 
                 # plot_durations(rewards0, show_result=False)
                 print("Finished an episode")
                 break
-    print('Training complete')
+    print("\n\nTime for selecting actions:")
+    print("Max time:", max(time0))
+    print("total time:", sum(time0))
+    print("avg time:", sum(time0) / len(time0))
+
+    print("\n\nTime for env.step:")
+    print("Max time:", max(time1))
+    print("total time:", sum(time1))
+    print("avg time:", sum(time1) / len(time1))
+
+    print("\n\nTime for storing obs:")
+    print("Max time:", max(time2))
+    print("total time:", sum(time2))
+    print("avg time:", sum(time2) / len(time2))
+
+    print("\n\nTime for optimization step:")
+    print("Max time:", max(time3))
+    print("total time:", sum(time3))
+    print("avg time:", sum(time3) / len(time3))
+
+    # print("\nTime for optimizing model:")
+    # print("Max time:", max(time4))
+    # print("total time:", sum(time4))
+    # print("avg time:", sum(time4) / len(time4))
+
+    # print("\nTime for soft update a:")
+    # print("Max time:", max(time5))
+    # print("total time:", sum(time5))
+    # print("avg time:", sum(time5) / len(time5))
+
+    print("\nTime for soft update:")
+    print("Max time:", max(time6))
+    print("total time:", sum(time6))
+    print("avg time:", sum(time6) / len(time6))
+
+    print('\n\nTraining complete')
     plot_durations(rewards0, "rewards 0", show_result=True)
     plot_durations(rewards1, "rewards 1", show_result=True)
     return reward
@@ -304,6 +370,9 @@ def create_agents(n_agents, total_n_actions, n_obs):
 def matchups(agents, n_episodes, env, render_mode = False):
     n_agents = len(agents)
     data = {}
+    sum_rewards0 = []
+    sum_rewards1 = []
+
     print(render_mode)
     for i in range(n_agents):
         for j in range(n_agents - 1):
@@ -311,19 +380,26 @@ def matchups(agents, n_episodes, env, render_mode = False):
                 print("Playing agent", i, "and agent", j, f"for {n_episodes} episodes")
                 rewards = train([agents[i], agents[j]], env, render_mode, n_episodes)
                 data[(i, j)] = rewards
+                sum_rewards0.append(rewards[0])
+                sum_rewards1.append(rewards[1])
             else:
                 print("Playing agent", i, "and agent", j + 1, f"for {n_episodes} episodes")
                 rewards = train([agents[i], agents[j + 1]], env, render_mode, n_episodes)
                 data[(i, j + 1)] = rewards
+                sum_rewards0.append(rewards[0])
+                sum_rewards1.append(rewards[1])
+            print("Sum rewards:", rewards)
+        plot_durations(sum_rewards0, "Sum Rewards0", show_result=True)
+        plot_durations(sum_rewards1, "Sum Rewards1", show_result=True)
     agent_names = [f"Agent {i}" for i in range(len(agents))]
     matrix = performance_matrix(data, agent_names)
     print(matrix)
-    print(data)
+    # print(data)
 
 
 # Create an instance of the Agent and enviornment and train the model
 env = env()
-n_agents = 20
+n_agents = 2
 # Reset env and get obs length
 state, n_obs = env.reset()
 
@@ -343,9 +419,10 @@ if verbose:
 model_path = "/Users/christophermao/Desktop/RLModels"
 
 # Train for 100,000 round-robins
+# Initialize agents for different action sets
+print("total action + obs", total_n_actions, n_obs)
+Agents = create_agents(n_agents, total_n_actions, n_obs)
 for i in range(100_000):
-    # Initialize agents for different action sets
-    Agents = create_agents(n_agents, total_n_actions, n_obs)
     matchups(Agents, 1, env, render_mode=False)
 
     plt.ioff()

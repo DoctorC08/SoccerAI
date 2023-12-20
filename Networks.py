@@ -54,7 +54,8 @@ class ReplayMemory(object):
 class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
-        print("n_obs and n_acts:", n_observations, n_actions)
+        if verbose:
+            print("n_obs and n_acts:", n_observations, n_actions)
         super(DQN, self).__init__()
         self.model = nn.Sequential(
             nn.Linear(n_observations, 32),
@@ -66,17 +67,18 @@ class DQN(nn.Module):
             nn.Linear(32, n_actions)
         )
     def forward(self, x):
+        # print(x)
         return self.model(x)
 
 class Agent:
     def __init__(self, n_actions, n_observations):
         self.n_actions = n_actions
         self.n_agents = 10                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 200 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.BATCH_SIZE = 200 * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = 0.9                    # EPS_START is the starting value of epsilon
-        self.EPS_END = 0.05                     # EPS_END is the final value of epsilon
-        self.EPS_DECAY = 100_000                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+        self.EPS_END = 0.01                     # EPS_END is the final value of epsilon
+        self.EPS_DECAY = 10_000                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
         self.TAU = 0.005                        # TAU is the update rate of the target network
         self.LR = 1e-6                          # LR is the learning rate of the ``AdamW`` optimizer
 
@@ -184,8 +186,8 @@ class Agent:
         return stacked_tensor
 
     def save_models(self, model_path):
-        torch.save(self.policy_net, model_path + "_policy_net")
-        torch.save(self.target_net, model_path + "_targe_net")
+        torch.save(self.policy_net, model_path + "_policy_net.pt")
+        torch.save(self.target_net, model_path + "_targe_net.pt")
 
 
 # training and plot duration funcs:

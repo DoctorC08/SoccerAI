@@ -17,6 +17,9 @@ from Enviornment import env
 import copy
 
 import pandas as pd
+from tqdm import tqdm
+import time
 
-tensor_2d = torch.tensor([-0.9533]).reshape(1, 1)
-print(tensor_2d)
+tensor = [1, 0]
+tensor.reverse()
+print(tensor)

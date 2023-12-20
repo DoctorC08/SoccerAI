@@ -55,8 +55,8 @@ class Player:
             print("velo:", velo)
         self.x = float(x_pos)
         self.y = float(y_pos)
-        self.x_velo = float(velo[0][0])
-        self.y_velo = float(velo[0][1])
+        self.x_velo = float(velo[0])
+        self.y_velo = float(velo[1])
         self.team = float(team)
 
     def draw(self, surface):
@@ -111,7 +111,7 @@ class simple_env(gym.Env):
         self.center_goal_position_x2 = self.field_bounds_x + self.field_width
 
         # y coordinate is same for both
-        self.center_goal_position_y = self.field_height + (self.field_bounds_y / 2)
+        self.center_goal_position_y = (self.field_height / 2) + (self.field_bounds_y / 2)
 
         # Define number of players (both teams)
         self.num_players = 2
@@ -126,6 +126,9 @@ class simple_env(gym.Env):
         #define timesteps
         self.max_steps = 200
         self.current_step = 0
+
+        self.total_ball_loc_rewardsa = 0
+        self.total_ball_loc_rewardsb = 0
 
         # define action and obs space
         # Define the action space
@@ -175,7 +178,7 @@ class simple_env(gym.Env):
         return return_obs, len(return_obs)
 
     # Player orientation will be in radians. 0 radians will be facing to the "right" in the enviornment
-    def step(self, obs, player_actions, timestep, render_mode): # TODO: Change how actions are interpreted
+    def step(self, obs, player_actions, timestep, render_mode):
         # if timestep % 100 == 0:
         #     print(timestep)
         # Split obs
@@ -189,6 +192,9 @@ class simple_env(gym.Env):
         self.step_reward = [0, 0]
 
         if timestep == 0 and render_mode == True:
+            self.total_ball_loc_rewardsa = 0
+            self.total_ball_loc_rewardsb = 0
+
             self.clockobject = pygame.time.Clock()
             print("Render mode: Human")
             pygame.init()
@@ -205,19 +211,25 @@ class simple_env(gym.Env):
             self.ball = Ball()
 
         # Check whether ball is in goal or out of bounds or in goal
-        terminated, last_possession, player_positions, player_velos, ball_or_not = self.check_ball_position(player_positions, player_velos, ball_position, last_possession)
+        terminated, last_possession = self.check_ball_position(player_positions, ball_position, last_possession)
         if verbose:
             print("190 check player positions:", player_positions)
-            print("191 last posession:", last_possession)
             print("192 ball or not", ball_or_not)
             print("213 player velos:", player_velos)
+            print("191 last posession:", last_possession)
 
         ball_or_not, last_possession = self.get_ball(player_positions, ball_position, last_possession, ball_or_not)
 
 
         # Find reward based off of location
         reward = self.ball_location_reward(ball_position)
+        if verbose:
+            print("ball_location_reward", reward)
+            print("total_ball_loc_reward:", self.total_ball_loc_rewardsa, self.total_ball_loc_rewardsb)
+        self.total_ball_loc_rewardsa += reward[0]
+        self.total_ball_loc_rewardsb += reward[1]
         self.step_reward = [self.step_reward[i] + reward[i] for i in range(len(self.step_reward))]
+
 
         # Give negative rewards if agent it out of bounds
         self.out_of_bounds_reward(player_positions)
@@ -253,7 +265,6 @@ class simple_env(gym.Env):
         # Render
         if render_mode == True:
             self.render(player_positions, player_velos, ball_position, ball_velo, timestep)
-            time.sleep(.05)
         # Check max timesteps
         truncated = self.terminated_or_not(timestep)
         if verbose:
@@ -276,91 +287,115 @@ class simple_env(gym.Env):
             print(x1, y1)
             print(x2, y2)
             raise EnvironmentError
-    def check_ball_position(self, player_positions, player_velos, ball_position, last_possession):
+    def check_ball_position(self, player_positions, ball_position, last_possession):
         # Check if ball is in goal or not or out of bounds
         if verbose:
             print("260 check player positions:", player_positions)
-        new_ball_position = ball_position
-        new_player_positions = player_positions
-        new_player_velos = player_velos
-        new_ball_or_not = [0 for i in range(self.num_players)]
-        if verbose:
-            print("264 check player positions:", new_player_positions)
-            print("276 new ball or not:", new_ball_or_not)
 
+            print("ball position:", ball_position)
         # If ball is in left goal
-        if ball_position[0] < self.center_goal_position_x1 - 12 and ball_position[0] > self.center_goal_position_x1 + 12 and ball_position[1] < self.center_goal_position_y:
+        if ball_position[0] < self.center_goal_position_x1 + 10 and ball_position[1] < self.center_goal_position_y + 12 and ball_position[1] > self.center_goal_position_y - 12:
             terminated = True
             self.step_reward[0] -= 1
             self.step_reward[1] += 1
+            print("An Agent Scored!")
 
         # If ball is in right goal
-        elif ball_position[0] < self.center_goal_position_x1 - 12 and ball_position[0] > self.center_goal_position_x1 + 12 and ball_position[1] < self.center_goal_position_y:
+        elif ball_position[0] > self.center_goal_position_x2 - 10 and ball_position[1] < self.center_goal_position_y + 12 and ball_position[1] > self.center_goal_position_y - 12:
            terminated = True
            self.step_reward[0] += 1
            self.step_reward[1] -= 1
+           print("An Agent Scored!")
+
+        # If ball is out of goal line
+        elif ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_bounds_x + self.field_width:
+            terminated = True
+            # Negative reward if you dribbled out:
+            self.neg_reward_on_possession(last_possession, reward=0.5)
+            last_possession.reverse()
+
+
+        elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_bounds_y + self.field_height:
+            terminated = True
+            # Neg reward if dribbled out
+            self.neg_reward_on_possession(last_possession, reward=0.3)
+            last_possession.reverse()
 
         else:
             terminated = False
 
+        # Original code
         # If ball is out for a corner kick or goal kick
-        if ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_width + self.field_bounds_x:
-            new_possession = last_possession[::-1] # create new posession
+        # if ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_width + self.field_bounds_x:
+        #     new_possession = last_possession[::-1] # create new posession
+        #
+        #     # Define new x coordinate for ball depending on which side it went out on
+        #     if ball_position[0] < self.field_bounds_x:
+        #         if ball_position[1] < self.field_bounds_y + (self.field_height // 2):
+        #             new_ball_position = [self.field_bounds_x, self.field_bounds_y]
+        #         elif ball_position[1] < self.field_bounds_y + (self.field_height // 2):
+        #             new_ball_position = [self.field_bounds_x, self.field_bounds_y + self.field_height]
+        #
+        #     elif ball_position[0] > self.field_width + self.field_bounds_x:
+        #         if ball_position[1] < self.field_bounds_y + (self.field_height // 2):
+        #             new_ball_position = [self.field_bounds_x + self.field_width, self.field_bounds_y]
+        #         elif ball_position[1] < self.field_bounds_y + (self.field_height // 2):
+        #             new_ball_position = [self.field_bounds_x + self.field_width, self.field_bounds_y + self.field_height]
+        #
+        #     # Rewards based on possession
+        #     if new_possession == [1, 0]:
+        #         self.step_reward[0] += .01
+        #         self.step_reward[1] -= .01
+        #     else:
+        #         self.step_reward[0] += .01
+        #         self.step_reward[1] -= .01
+        #
+        #     new_player_positions, new_player_velos, new_ball_or_not = self.corner_kick_or_goal_kick(new_possession, player_positions, player_velos, new_ball_position)
+        #     if verbose:
+        #         print("306 check player positions:", new_player_positions)
+        #         print("319 new ball or not:", new_ball_or_not)
+        #
+        #
+        # # If ball is out for a throwin
+        # elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_height + self.field_bounds_y:
+        #     new_possession = last_possession[::-1]
+        #     # Create new ball position so ball isn't out of bounds
+        #     if ball_position[1] < self.field_bounds_y:
+        #         new_ball_position[1] = self.field_bounds_y
+        #     else:
+        #         new_ball_position[1] = self.field_bounds_y + self.field_height
+        #     new_player_positions, new_player_velos, new_ball_or_not = self.throwin(new_possession, player_positions, player_velos, new_ball_position)
+        #     if verbose:
+        #         print("317 check player positions:", new_player_positions)
+        #         print("330 new ball or not:", new_ball_or_not)
+        #
+        #
+        #     # Rewards based on possession
+        #     if new_possession == [1, 0]:
+        #         self.step_reward[0] += .005
+        #         self.step_reward[1] -= .005
+        #     else:
+        #         self.step_reward[0] += .005
+        #         self.step_reward[1] -= .005
+        # else:
+        #     new_possession = last_possession
+        # if verbose:
+        #     print("329 check player positions:", new_player_positions)
 
-            # Define new x coordinate for ball depending on which side it went out on
-            if ball_position[0] < self.field_bounds_x:
-                if ball_position[1] < self.field_bounds_y + (self.field_height // 2):
-                    new_ball_position = [self.field_bounds_x, self.field_bounds_y]
-                elif ball_position[1] < self.field_bounds_y + (self.field_height // 2):
-                    new_ball_position = [self.field_bounds_x, self.field_bounds_y + self.field_height]
+        return terminated, last_possession
 
-            elif ball_position[0] > self.field_width + self.field_bounds_x:
-                if ball_position[1] < self.field_bounds_y + (self.field_height // 2):
-                    new_ball_position = [self.field_bounds_x + self.field_width, self.field_bounds_y]
-                elif ball_position[1] < self.field_bounds_y + (self.field_height // 2):
-                    new_ball_position = [self.field_bounds_x + self.field_width, self.field_bounds_y + self.field_height]
-
-            # Rewards based on possession
-            if new_possession == [1, 0]:
-                self.step_reward[0] += .01
-                self.step_reward[1] -= .01
-            else:
-                self.step_reward[0] += .01
-                self.step_reward[1] -= .01
-
-            new_player_positions, new_player_velos, new_ball_or_not = self.corner_kick_or_goal_kick(new_possession, player_positions, player_velos, new_ball_position)
+    def neg_reward_on_possession(self, last_possession, reward):
+        if last_possession == [0, 1]:
+            self.step_reward[0] += reward
+            self.step_reward[1] -= reward
             if verbose:
-                print("306 check player positions:", new_player_positions)
-                print("319 new ball or not:", new_ball_or_not)
-
-
-        # If ball is out for a throwin
-        elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_height + self.field_bounds_y:
-            new_possession = last_possession[::-1]
-            # Create new ball position so ball isn't out of bounds
-            if ball_position[1] < self.field_bounds_y:
-                new_ball_position[1] = self.field_bounds_y
-            else:
-                new_ball_position[1] = self.field_bounds_y + self.field_height
-            new_player_positions, new_player_velos, new_ball_or_not = self.throwin(new_possession, player_positions, player_velos, new_ball_position)
-            if verbose:
-                print("317 check player positions:", new_player_positions)
-                print("330 new ball or not:", new_ball_or_not)
-
-
-            # Rewards based on possession
-            if new_possession == [1, 0]:
-                self.step_reward[0] += .005
-                self.step_reward[1] -= .005
-            else:
-                self.step_reward[0] += .005
-                self.step_reward[1] -= .005
+                print("reward based on possession:", reward)
         else:
-            new_possession = last_possession
-        if verbose:
-            print("329 check player positions:", new_player_positions)
+            self.step_reward[0] -= reward
+            self.step_reward[1] += reward
+            if verbose:
+                print("reward based on possession:", reward)
 
-        return terminated, new_possession, new_player_positions, new_player_velos, new_ball_or_not
 
     def throwin(self, new_possession, player_positions, player_velos, ball_position):
         # Find closest player
@@ -428,13 +463,19 @@ class simple_env(gym.Env):
         if ball_position[0] > (self.field_width/2) + self.field_bounds_x:
             # distance formula stuff and fraction of that for reward
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x2, self.center_goal_position_y)
-            if 1 / (2 * distance) < .1:
+            if 1/ (2 * distance) < 0.01:
+                return [0, 0]
+            elif 1 / (2 * distance) < .1:
+                # print(" or here", 1 / (2 * distance))
                 return [1 / (2 * distance), -1 / (2 * distance)]
             else:
                 return [0.1, -0.1]
         else:
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x1, self.center_goal_position_y)
-            if 1 / (2 * distance) < .1:
+            if 1/ (2 * distance) < 0.01:
+                return [0, 0]
+            elif 1 / (2 * distance) < .1:
+                # print("here", 1 / (2 * distance))
                 return [-1 / (2 * distance), 1 / (2 * distance)]
             else:
                 return [-0.1, 0.1]
@@ -447,17 +488,24 @@ class simple_env(gym.Env):
             player_position1 = [player_positions[i * 2], player_positions[(i * 2) + 1]]
 
         # define bounds for negative rewards
+        # DO NOT CHANGE TO ELIF
         if player_position0[0] < self.field_bounds_x or player_position0[0] > self.field_width + self.field_bounds_x:
             self.step_reward[0] -= 0.1
+            # print("Out of bounds reward")
 
-        elif player_position0[1] < self.field_bounds_y or player_position0[1] > self.field_height + self.field_bounds_y:
+        if player_position0[1] < self.field_bounds_y or player_position0[1] > self.field_height + self.field_bounds_y:
             self.step_reward[0] -= 0.1
+            # print("Out of bounds reward")
 
-        elif player_position1[0] < self.field_bounds_x or player_position1[0] > self.field_width + self.field_bounds_x:
-            self.step_reward[1] -= 0.1
 
-        elif player_position1[1] < self.field_bounds_y or player_position1[1] > self.field_height + self.field_bounds_y:
+        if player_position1[0] < self.field_bounds_x or player_position1[0] > self.field_width + self.field_bounds_x:
             self.step_reward[1] -= 0.1
+            # print("Out of bounds reward")
+
+
+        if player_position1[1] < self.field_bounds_y or player_position1[1] > self.field_height + self.field_bounds_y:
+            self.step_reward[1] -= 0.1
+            # print("Out of bounds reward")
 
     def get_ball(self, player_positions, ball_position, last_possession, ball_or_not):
         for i in range(self.num_players):
@@ -758,7 +806,7 @@ class simple_env(gym.Env):
                 team = 0
             else:
                 team = 1
-            self.Players[i].move(player_positions[i * 2], player_positions[(i * 2) + 1], [player_velos[i]], team)
+            self.Players[i].move(player_positions[i * 2], player_positions[(i * 2) + 1], [player_velos[i * 2], player_velos[(i * 2) + 1]], team)
 
 
         for i in range(self.num_players):
@@ -769,7 +817,7 @@ class simple_env(gym.Env):
 
         # Flip the display
         pygame.display.flip()
-        self.clockobject.tick(10)
+        self.clockobject.tick(1)
 
     def close(self):
         pygame.quit()

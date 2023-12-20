@@ -24,6 +24,8 @@ import time
 
 import numpy as np
 
+from tqdm import tqdm
+
 from torch.optim import AdamW
 
 # Define Verbose
@@ -44,7 +46,7 @@ Transition = namedtuple('Transition',
 
 # Def train
 def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Agents
-    # TODO: take training time data
+    # take training time data
     rewards0 = []
     rewards1 = []
     time0 = []
@@ -84,10 +86,6 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             new_action1 = map_output_to_actions(action1).squeeze() # TODO change this final list if I ever change action shape
             new_action2 = map_output_to_actions(action2).squeeze()
 
-            # Convert action1/2 to binary
-            # action1 = discrete_to_one_hot_vector(action1, 8) # TODO Change this if i change num actions
-            # action2 = discrete_to_one_hot_vector(action2, 8)
-
 
             # reform action lists, so env can read it properly
             if verbose:
@@ -104,7 +102,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             reward = add_outer_dimension(reward)
             done = terminated or truncated
 
-            if terminated:
+            if done:
                 next_state = None
             else:
                 next_state = observation.clone().detach().to(dtype=torch.float32, device=device).unsqueeze(0)
@@ -115,19 +113,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             start_time = time.time()
 
             # Store the transition in memory
-            if verbose:
-                pass
-                # print(f"storing in {agent}th agent", torch.tensor(action1[agent]))
-                # print(f"storing in {agent}th agent", torch.tensor(next_state))
-                # print(f"storing in {agent}th agent", torch.tensor(next_state).shape)
             Agents[0][0].memory.push(observation, action1.clone().detach(), next_state, reward[0].clone().detach())
-
-            # Store the transition in memory
-            if verbose:
-                pass
-                # print(f"storing in {agent}th agent", torch.tensor(action1[agent - (len(Agents) // 2)]))
-                # print(f"storing in {agent}th agent", torch.tensor(next_state))
-                # print(f"storing in {agent}th agent", torch.tensor(next_state).shape)
             Agents[1][0].memory.push(observation, action2.clone().detach(), next_state, reward[1].clone().detach())
 
             end_time = time.time()
@@ -137,6 +123,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             # Move to the next state
             observation = next_state
             if t % 100:
+                end_timea = time.time()
                 # print("agent:", Agents)
                 for i in range(len(Agents)):
                     # print(Agents[i][0])
@@ -145,10 +132,8 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                         # print("Agent num:", Agents.index(agent))
                         # Perform one step of the optimization (on the policy network)
                         print("timestep:", t)
-                    start_timea = time.time()
+
                     Agents[i][0].optimize_model()
-                    end_timea = time.time()
-                    time4.append(end_timea-start_timea)
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
@@ -160,7 +145,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                                     1 - Agents[i][0].TAU)
                     Agents[i][0].target_net.load_state_dict(target_net_state_dict)
 
-                    time6.append(time.time()-end_timea)
+                time6.append(time.time() - end_timea)
                 rewards0.append(reward[0])
                 rewards1.append(reward[1])
 
@@ -207,12 +192,13 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
     # print("total time:", sum(time6))
     # print("avg time:", sum(time6) / len(time6))
 
+
     # print('\n\nTraining complete')
     # plot_durations(rewards0, "rewards 0", show_result=False)
     # plot_durations(rewards1, "rewards 1", show_result=False)
-    return [sum(rewards0), sum(rewards1)]
+    return [sum(rewards0), sum(rewards1)], time6
 
-def plot_durations(reward, names, show_result=False): #TODO plot multiple graphs for differenet ganets, or change it to a matrix
+def plot_durations(reward, names, show_result=False):
     plt.figure(1)
     reward_t = torch.tensor(reward, dtype=torch.float)
 
@@ -233,23 +219,13 @@ def plot_durations(reward, names, show_result=False): #TODO plot multiple graphs
 
 def performance_matrix(data):
     # Creates a performance matrix for a set of agents with names.
-    # # Create an empty DataFrame
-    # df = pd.DataFrame(index=agent_names, columns=agent_names)
-    #
-    # # Fill the DataFrame with performance values
-    # for agent_pair, metrics in data.items():
-    #     agent1, agent2 = agent_pair
-    #     df.loc[agent_names[agent1], agent_names[agent2]] = metrics
-    #
-    # # Return the DataFrame
-    # return df
     matrix = np.array([[0 for _ in range(10)] for _ in range(10)], dtype=float) #TODO if i change n agents
 
     # Populate the matrix with values from the dictionary
     for row, col in data:
         matrix[row][col] = data[(row, col)]
 
-    print(matrix)
+    # print(matrix)
     plt.matshow(matrix)
     plt.colorbar()
     plt.show()
@@ -313,11 +289,11 @@ def matchups(agents, n_episodes, env, sum_rewards0, sum_rewards1, time_to_train,
     data = {}
 
     # print(render_mode)
-    for i in range(n_agents):
+    for i in tqdm(range(n_agents)):
         for j in range(i + 1, n_agents):
             start_time = time.time()
-            print("Playing agent", i, "and agent", j)
-            rewards = train([agents[i], agents[j]], env, render_mode, n_episodes)
+            # print("Playing agent", i, "and agent", j)
+            rewards, time6 = train([agents[i], agents[j]], env, render_mode, n_episodes)
             end_time = time.time()
             data[(i, j)] = rewards[0].reshape(1, 1)
             data[(j, i)] = rewards[1].reshape(1, 1)
@@ -326,10 +302,10 @@ def matchups(agents, n_episodes, env, sum_rewards0, sum_rewards1, time_to_train,
             # sum_rewards1.append(rewards[1])
             # print("Sum rewards:", rewards)
     plot_durations(time_to_train, ["Time to train", "Time (sec)", "Episodes"], show_result=True)
+    plot_durations(time6, ["Time for soft udpate", "Time (sec)", "Episodes"], show_result=True)
     # plot_durations(sum_rewards0, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
     # plot_durations(sum_rewards1, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
 
-    agent_names = [f"Agent {i}" for i in range(len(agents))]
     # print("data", data)
     performance_matrix(data)
 
@@ -364,11 +340,11 @@ time_to_train = []
 
 # Train for 1_000 round-robins
 for i in range(100):
+# for i in range(100):
     matchups(Agents, 1, env, sum_rewards0, sum_rewards1, time_to_train, render_mode=False)
-    print(f"Finished {i} matchups")
-    if i % 10:
-        matchups(Agents, 1, env, sum_rewards0, sum_rewards1, time_to_train, render_mode=True)
+    print(f"Finished {i + 1} matchups")
+    if i % 10 == 0:
         for agent in range(len(Agents)):
-            model_path = f"/Users/christophermao/Desktop/RLModels/1.{i/10}save_for_agent{agent}"
+            model_path = f"/Users/christophermao/Desktop/RLModels/2.0.{i/10}save_for_agent{agent}"
             Agents[agent][0].save_models(model_path)
 

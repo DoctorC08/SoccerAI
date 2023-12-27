@@ -37,7 +37,8 @@ Transition = namedtuple('Transition',
 
 class ReplayMemory(object):
 
-    def __init__(self, capacity):
+    def __init__(self, capacity): # TODO Change to circular buffer
+
         self.memory = deque([], maxlen=capacity)
 
     def push(self, *args):
@@ -50,8 +51,26 @@ class ReplayMemory(object):
     def __len__(self):
         return len(self.memory)
 
+class CircularBuffer(object):
+    def __init__(self, buffer_size):
+        self.index = 0
+        self.buffer_size = buffer_size
+        self.data = [0 for _ in range(buffer_size)]
 
-class DQN(nn.Module):
+    def push(self, *args):
+        self.index += 1
+        if self.index >= self.buffer_size:
+            self.index = 0
+        self.data[self.index] = Transition(*args)
+
+    def sample(self, batch_size):
+        return random.sample(self.data, batch_size)
+
+    def __len__(self):
+        return len(self.data)
+
+
+class DQN(nn.Module): # Add: Double + Dueling DQN
 
     def __init__(self, n_observations, n_actions):
         if verbose:
@@ -71,16 +90,18 @@ class DQN(nn.Module):
         return self.model(x)
 
 class Agent:
-    def __init__(self, n_actions, n_observations):
+    def __init__(self, n_actions, n_observations, batch_size=200, mem_capacity=10_000, n_agents=10, EPS_START=100, EPS_END=0.05, EPS_DECAY=100_000, LR=1e-10, GAMMA=0.99):
         self.n_actions = n_actions
-        self.n_agents = 10                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 200 * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer
-        self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
-        self.EPS_START = 0.9                    # EPS_START is the starting value of epsilon
-        self.EPS_END = 0.01                     # EPS_END is the final value of epsilon
-        self.EPS_DECAY = 10_000                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+        self.n_agents = n_agents                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
+        self.BATCH_SIZE = batch_size * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.GAMMA = GAMMA                       # GAMMA is the discount factor as mentioned in the previous section
+        self.EPS_START = EPS_START                    # EPS_START is the starting value of epsilon
+        self.EPS_END = EPS_END                     # EPS_END is the final value of epsilon
+        self.EPS_DECAY = EPS_DECAY                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
         self.TAU = 0.005                        # TAU is the update rate of the target network
-        self.LR = 1e-6                          # LR is the learning rate of the ``AdamW`` optimizer
+        self.LR = LR                          # LR is the learning rate of the ``AdamW`` optimizer
+        # TODO: Try increasing LR to as high as possible
+        # Could try cosineannealing for LR
 
         self.episode_durations = []
 
@@ -90,7 +111,7 @@ class Agent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
-        self.memory = ReplayMemory(10_000)
+        self.memory = CircularBuffer(mem_capacity)
 
         self.steps_done = 0
 
@@ -187,7 +208,7 @@ class Agent:
 
     def save_models(self, model_path):
         torch.save(self.policy_net, model_path + "_policy_net.pt")
-        torch.save(self.target_net, model_path + "_targe_net.pt")
+        torch.save(self.target_net, model_path + "_target_net.pt")
 
 
 # training and plot duration funcs:

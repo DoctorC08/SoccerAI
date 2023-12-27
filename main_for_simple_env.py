@@ -133,7 +133,6 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                         # Perform one step of the optimization (on the policy network)
                         print("timestep:", t)
 
-                    Agents[i][0].optimize_model()
 
                     # Soft update of the target network's weights
                     # θ′ ← τ θ + (1 −τ )θ′
@@ -161,32 +160,32 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
     # print("Max time:", max(time0))
     # print("total time:", sum(time0))
     # print("avg time:", sum(time0) / len(time0))
-
+    #
     # print("\n\nTime for env.step:")
     # print("Max time:", max(time1))
     # print("total time:", sum(time1))
     # print("avg time:", sum(time1) / len(time1))
-
+    #
     # print("\n\nTime for storing obs:")
     # print("Max time:", max(time2))
     # print("total time:", sum(time2))
     # print("avg time:", sum(time2) / len(time2))
-
+    #
     # print("\n\nTime for optimization step:")
     # print("Max time:", max(time3))
     # print("total time:", sum(time3))
     # print("avg time:", sum(time3) / len(time3))
-
-    # print("\nTime for optimizing model:")
-    # print("Max time:", max(time4))
-    # print("total time:", sum(time4))
-    # print("avg time:", sum(time4) / len(time4))
-
-    # print("\nTime for soft update a:")
-    # print("Max time:", max(time5))
-    # print("total time:", sum(time5))
-    # print("avg time:", sum(time5) / len(time5))
-
+    #
+    # # print("\nTime for optimizing model:")
+    # # print("Max time:", max(time4))
+    # # print("total time:", sum(time4))
+    # # print("avg time:", sum(time4) / len(time4))
+    #
+    # # print("\nTime for soft update a:")
+    # # print("Max time:", max(time5))
+    # # print("total time:", sum(time5))
+    # # print("avg time:", sum(time5) / len(time5))
+    #
     # print("\nTime for soft update:")
     # print("Max time:", max(time6))
     # print("total time:", sum(time6))
@@ -219,7 +218,7 @@ def plot_durations(reward, names, show_result=False):
 
 def performance_matrix(data):
     # Creates a performance matrix for a set of agents with names.
-    matrix = np.array([[0 for _ in range(10)] for _ in range(10)], dtype=float) #TODO if i change n agents
+    matrix = np.array([[0 for _ in range(10)] for _ in range(10)], dtype=float) # TODO if i change n agents
 
     # Populate the matrix with values from the dictionary
     for row, col in data:
@@ -284,12 +283,12 @@ def create_agents(n_agents, total_n_actions, n_obs):
     return agents
 
 # Define matchups and create performance matrix
-def matchups(agents, n_episodes, env, sum_rewards0, sum_rewards1, time_to_train, render_mode = False):
+def matchups(agents, n_episodes, env, time_to_train, render_mode = False):
     n_agents = len(agents)
     data = {}
 
     # print(render_mode)
-    for i in tqdm(range(n_agents)):
+    for i in range(n_agents):
         for j in range(i + 1, n_agents):
             start_time = time.time()
             # print("Playing agent", i, "and agent", j)
@@ -301,8 +300,12 @@ def matchups(agents, n_episodes, env, sum_rewards0, sum_rewards1, time_to_train,
             # sum_rewards0.append(rewards[0])
             # sum_rewards1.append(rewards[1])
             # print("Sum rewards:", rewards)
+    start_time = time.time()
+    for i in range(n_agents):
+        Agents[i][0].optimize_model()
+    # print("time for optimization steps:", time.time() - start_time)
     plot_durations(time_to_train, ["Time to train", "Time (sec)", "Episodes"], show_result=True)
-    plot_durations(time6, ["Time for soft udpate", "Time (sec)", "Episodes"], show_result=True)
+    # plot_durations(time6, ["Time for soft udpate", "Time (sec)", "Episodes"], show_result=True)
     # plot_durations(sum_rewards0, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
     # plot_durations(sum_rewards1, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
 
@@ -334,17 +337,17 @@ if verbose:
 
 # Create the agents
 Agents = create_agents(n_agents, n_actions, n_obs)
-sum_rewards0 = []
-sum_rewards1 = []
 time_to_train = []
 
 # Train for 1_000 round-robins
-for i in range(100):
+for i in range(1000):
 # for i in range(100):
-    matchups(Agents, 1, env, sum_rewards0, sum_rewards1, time_to_train, render_mode=False)
+    matchups(Agents, 1, env, time_to_train, render_mode=False)
     print(f"Finished {i + 1} matchups")
-    if i % 10 == 0:
+    if i % 50 == 0:
         for agent in range(len(Agents)):
-            model_path = f"/Users/christophermao/Desktop/RLModels/2.0.{i/10}save_for_agent{agent}"
+            model_path = f"/Users/christophermao/Desktop/RLModels/2.0.{int(i/10)}save_for_agent{agent}"
             Agents[agent][0].save_models(model_path)
 
+# TODO: we can test how our model is training by comparing it to past agents, so take WR and rewards
+# 40 is intresting

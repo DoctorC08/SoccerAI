@@ -42,7 +42,9 @@ def map_output_to_actions(output):
         print("return action values:", torch.tensor(return_values))
     return torch.tensor(return_values)
 
-def train(Agents, env, render_mode, num_episodes=600):
+def train(Agents, env, render_mode, num_episodes=50):
+    total_rewardsa = []
+    total_rewardsb = []
     for i_episode in range(num_episodes):
         observation, _ = env.reset()
         observation = observation.clone().detach().to(dtype=torch.float32).unsqueeze(0)
@@ -64,13 +66,18 @@ def train(Agents, env, render_mode, num_episodes=600):
             reward = reward.clone().detach()
             done = terminated or truncated
             # print(reward, done)
-
+            total_rewardsa.append(reward[0])
+            total_rewardsb.append(reward[1])
             if done:
                 break
+    return  [total_rewardsa, total_rewardsb]
 
 def matchups(agents, n_episodes, env, render_mode = False):
-
+    total_reward = []
     rewards = train([agents[0], agents[1]], env, render_mode, n_episodes)
+    total_reward = sum(rewards[0]), sum(rewards[1])
+    # if verbose:
+    print(total_reward)
 
 def select_action(state, policy_net):
     with torch.no_grad():
@@ -82,8 +89,10 @@ def load_models(n_agents, save_version):
         path = f"/Users/christophermao/Desktop/RLModels/{save_version}save_for_agent{i}_policy_net.pt"
         Agents.append(torch.load(path))
 
-path1 = f"/Users/christophermao/Desktop/RLModels/1.8.0save_for_agent9_policy_net.pt"
-path2 = f"/Users/christophermao/Desktop/RLModels/1.8.0save_for_agent8_policy_net.pt"
+# we can test how our model is training by comparing it to past agents, so take WR and rewards
+# Test agents by playing it against past agents and take wr and rewards
+path1 = f"/Users/christophermao/Desktop/RLModels/2.0.0save_for_agent5_policy_net.pt"
+path2 = f"/Users/christophermao/Desktop/RLModels/2.0.0save_for_agent4_policy_net.pt"
 
 modela = torch.load(path1)
 modelb = torch.load(path2)
@@ -95,3 +104,4 @@ env = simple_env()
 state, n_obs = env.reset()
 
 matchups(agents, 1, env, render_mode=True)
+

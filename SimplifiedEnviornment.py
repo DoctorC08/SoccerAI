@@ -17,8 +17,13 @@ import copy
 
 import time
 
+import math
+
 global verbose
 verbose = False
+
+global reward_verbose
+reward_verbose = False
 
 # Pygame stuff for rendering
 field_width = 345
@@ -167,7 +172,7 @@ class simple_env(gym.Env):
         for i in range(half_num_players):
             player_positions[(i + half_num_players) * 2] = self.field_bounds_x + (self.field_width // 4) * 3
             player_positions[((i + half_num_players) * 2) + 1] = self.field_bounds_y + (self.field_height // 2) + (i * 20)
-        player_velos = [[0, 0] for i in range(self.num_players)]
+        player_velos = [0 for i in range(self.num_players * 2)]
 
         ball_or_not = [0 for i in range(self.num_players)] # Reset ball or not
         last_possession = [0, 0] # Reset last possession
@@ -196,7 +201,8 @@ class simple_env(gym.Env):
             self.total_ball_loc_rewardsb = 0
 
             self.clockobject = pygame.time.Clock()
-            print("Render mode: Human")
+            if verbose:
+                print("Render mode: Human")
             pygame.init()
             pygame.display.set_caption('Soccer')
             self.display = pygame.display.set_mode((screen_width_ft, screen_height_ft))
@@ -223,8 +229,8 @@ class simple_env(gym.Env):
 
         # Find reward based off of location
         reward = self.ball_location_reward(ball_position)
-        if verbose:
-            print("ball_location_reward", reward)
+        if reward_verbose:
+            print("ball location reward", reward)
             print("total_ball_loc_reward:", self.total_ball_loc_rewardsa, self.total_ball_loc_rewardsb)
         self.total_ball_loc_rewardsa += reward[0]
         self.total_ball_loc_rewardsb += reward[1]
@@ -244,7 +250,8 @@ class simple_env(gym.Env):
 
 
         # Check for collisions
-        player_positions, player_velos = self.player_collision(player_positions, player_velos)
+        # TODO: Add back player collisions?
+        # player_positions, player_velos = self.player_collision(player_positions, player_velos)
         if verbose:
             print("201 check player positions:", player_positions)
 
@@ -255,9 +262,6 @@ class simple_env(gym.Env):
         ball_or_not = self.get_tackled(player_positions, player_actions[0], ball_or_not)
         ball_or_not = self.get_tackled(player_positions, player_actions[1], ball_or_not)
 
-        # calculate new ball velo based on friction
-        if ball_velo[0] > 0 or ball_velo[1] > 0:
-            ball_velo = [(self.meu_friction_force) + ball_velo[i] for i in range(2)]
         if verbose:
             print("224 check player positions:", player_positions)
             print("224 ball or not", ball_or_not)
@@ -279,14 +283,24 @@ class simple_env(gym.Env):
             return False
 
     def find_distance(self, x1, y1, x2, y2):
+        if verbose:
+            print(x1, y1)
+            print(x2, y2)
         try:
             return torch.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
         except TypeError:
-            return torch.sqrt((x1[0] - x2[0]) ** 2 + (y1[0] - y2[0]) ** 2)
+            try:
+                return torch.sqrt((x1[0] - x2[0]) ** 2 + (y1[0] - y2[0]) ** 2)
+            except:
+                return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
         except:
-            print(x1, y1)
-            print(x2, y2)
-            raise EnvironmentError
+            try:
+                return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+            except:
+                print(x1, y1)
+                print(x2, y2)
+                raise EnvironmentError
+
     def check_ball_position(self, player_positions, ball_position, last_possession):
         # Check if ball is in goal or not or out of bounds
         if verbose:
@@ -294,31 +308,33 @@ class simple_env(gym.Env):
 
             print("ball position:", ball_position)
         # If ball is in left goal
-        if ball_position[0] < self.center_goal_position_x1 + 10 and ball_position[1] < self.center_goal_position_y + 12 and ball_position[1] > self.center_goal_position_y - 12:
+        if ball_position[0] < self.center_goal_position_x1 + 10 and ball_position[1] < self.center_goal_position_y + 30 and \
+                ball_position[1] > self.center_goal_position_y - 30:
             terminated = True
-            self.step_reward[0] -= 1
-            self.step_reward[1] += 1
+            self.step_reward[0] -= 4
+            self.step_reward[1] += 2
             print("An Agent Scored!")
 
         # If ball is in right goal
-        elif ball_position[0] > self.center_goal_position_x2 - 10 and ball_position[1] < self.center_goal_position_y + 12 and ball_position[1] > self.center_goal_position_y - 12:
-           terminated = True
-           self.step_reward[0] += 1
-           self.step_reward[1] -= 1
-           print("An Agent Scored!")
+        elif ball_position[0] > self.center_goal_position_x2 - 10 and ball_position[1] < self.center_goal_position_y + 30 and \
+                ball_position[1] > self.center_goal_position_y - 30:
+            terminated = True
+            self.step_reward[0] += 2
+            self.step_reward[1] -= 4
+            print("An Agent Scored!")
 
         # If ball is out of goal line
-        elif ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_bounds_x + self.field_width:
+        elif ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_bounds_x + field_width:
             terminated = True
             # Negative reward if you dribbled out:
-            self.neg_reward_on_possession(last_possession, reward=0.5)
+            self.neg_reward_on_possession(last_possession, reward=40)
             last_possession.reverse()
 
 
-        elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_bounds_y + self.field_height:
+        elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_bounds_y + field_height:
             terminated = True
             # Neg reward if dribbled out
-            self.neg_reward_on_possession(last_possession, reward=0.3)
+            self.neg_reward_on_possession(last_possession, reward=20)
             last_possession.reverse()
 
         else:
@@ -386,15 +402,13 @@ class simple_env(gym.Env):
 
     def neg_reward_on_possession(self, last_possession, reward):
         if last_possession == [0, 1]:
-            self.step_reward[0] += reward
             self.step_reward[1] -= reward
-            if verbose:
-                print("reward based on possession:", reward)
+            if reward_verbose:
+                print("neg reward out of bounds:", reward)
         else:
             self.step_reward[0] -= reward
-            self.step_reward[1] += reward
-            if verbose:
-                print("reward based on possession:", reward)
+            if reward_verbose:
+                print("neg reward out of bounds:", reward)
 
 
     def throwin(self, new_possession, player_positions, player_velos, ball_position):
@@ -463,20 +477,24 @@ class simple_env(gym.Env):
         if ball_position[0] > (self.field_width/2) + self.field_bounds_x:
             # distance formula stuff and fraction of that for reward
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x2, self.center_goal_position_y)
-            if 1/ (2 * distance) < 0.01:
+            if reward_verbose:
+                print("ball loc reward (anti-cut):", 1 / distance)
+            if 1 / distance < 0.002:
                 return [0, 0]
             elif 1 / (2 * distance) < .1:
                 # print(" or here", 1 / (2 * distance))
-                return [1 / (2 * distance), -1 / (2 * distance)]
+                return [1 / distance, -1 / distance]
             else:
                 return [0.1, -0.1]
         else:
             distance = self.find_distance(ball_position[0], ball_position[1], self.center_goal_position_x1, self.center_goal_position_y)
-            if 1/ (2 * distance) < 0.01:
+            if reward_verbose:
+                print("ball loc reward (anti-cut):", 1 / distance)
+            if 1 / distance < 0.002:
                 return [0, 0]
-            elif 1 / (2 * distance) < .1:
+            elif 1 / distance < .1:
                 # print("here", 1 / (2 * distance))
-                return [-1 / (2 * distance), 1 / (2 * distance)]
+                return [-1 / distance, 1 / distance]
             else:
                 return [-0.1, 0.1]
 
@@ -490,28 +508,32 @@ class simple_env(gym.Env):
         # define bounds for negative rewards
         # DO NOT CHANGE TO ELIF
         if player_position0[0] < self.field_bounds_x or player_position0[0] > self.field_width + self.field_bounds_x:
-            self.step_reward[0] -= 0.1
-            # print("Out of bounds reward")
+            self.step_reward[0] -= 0.2
+            if reward_verbose:
+                print("Out of bounds reward")
 
         if player_position0[1] < self.field_bounds_y or player_position0[1] > self.field_height + self.field_bounds_y:
-            self.step_reward[0] -= 0.1
-            # print("Out of bounds reward")
+            self.step_reward[0] -= 0.2
+            if reward_verbose:
+                print("Out of bounds reward")
 
 
         if player_position1[0] < self.field_bounds_x or player_position1[0] > self.field_width + self.field_bounds_x:
-            self.step_reward[1] -= 0.1
-            # print("Out of bounds reward")
+            self.step_reward[1] -= 0.2
+            if reward_verbose:
+                print("Out of bounds reward")
 
 
         if player_position1[1] < self.field_bounds_y or player_position1[1] > self.field_height + self.field_bounds_y:
-            self.step_reward[1] -= 0.1
-            # print("Out of bounds reward")
+            self.step_reward[1] -= 0.2
+            if reward_verbose:
+                print("Out of bounds reward")
 
     def get_ball(self, player_positions, ball_position, last_possession, ball_or_not):
         for i in range(self.num_players):
             distance = self.find_distance(player_positions[i * 2], player_positions[(i * 2) + 1], ball_position[0], ball_position[1])
             # print(distance)
-            if distance <= 50:
+            if distance <= 30:
                 new_ball_or_not = [0 for i in range(self.num_players)]
                 new_ball_or_not[i] = 1 # find index of player inside of player_positions
 
@@ -520,59 +542,133 @@ class simple_env(gym.Env):
                 return new_ball_or_not, last_possession
         return ball_or_not, last_possession
 
+    # def get_tackled(self, player_positions, player_actions, new_possession):
+    #     # print("player positions:", player_positions)
+    #     # Initialize an empty list to store the new possession
+    #     if verbose:
+    #         print("player actions - get tackled func:", player_actions)        # Loop through each player
+    #     for i in range(self.num_players // 2):
+    #         if verbose:
+    #             print(f"{i} player action:", player_actions[i])
+    #         # Check if the player wants to tackle
+    #         if player_actions[1] == 1:
+    #             # Get the player's orientation and position
+    #             player1_position = [player_positions[(i * 2)], player_positions[(i * 2) + 1]]
+    #
+    #             # Loop through the other players
+    #             for j in range(self.num_players):
+    #                 # Check if the other player has the ball
+    #                 if new_possession[j]:
+    #                     # Get the other player's orientation and position
+    #                     player2_position = [player_positions[(j * 2)], player_positions[(j * 2) + 1]]
+    #                     # print("player position1 and 2:", player1_position, player2_position)
+    #
+    #
+    #                     # Check if the two players are facing each other and are within 5
+    #                     distance = self.find_distance(player1_position[0], player1_position[1], player2_position[0], player2_position[1])
+    #                     if distance <= 30:
+    #                         # The player has tackled the ball
+    #                         new_possession[i] = 1
+    #                         new_possession[j] = 0
+    #
+    #                         # Give rewards to player who tackled successfully
+    #                         if player_positions.index(player1_position[0]) >= len(player_positions) // 2:
+    #                             self.step_reward[0] -= .05
+    #                             self.step_reward[1] += .05
+    #                             if reward_verbose:
+    #                                 print("reward from tacklinga")
+    #                         else:
+    #                             # If player is on second team
+    #                             self.step_reward[0] += .05
+    #                             self.step_reward[1] -= .05
+    #                             if reward_verbose:
+    #                                 print("reward from tacklinga")
+    #
+    #                     else:
+    #                         if player_positions.index(player1_position[0]) >= len(player_positions) // 2:
+    #                             self.step_reward[1] -= .03
+    #                             if reward_verbose:
+    #                                 print("reward from tacklingb")
+    #
+    #                         else:
+    #                             self.step_reward[0] -= .03
+    #                             if reward_verbose:
+    #                                 print("reward from tacklingb")
+    #     return new_possession
     def get_tackled(self, player_positions, player_actions, new_possession):
         # print("player positions:", player_positions)
         # Initialize an empty list to store the new possession
         if verbose:
-            print("player actions - get tackled func:", player_actions)        # Loop through each player
+            print("possession:", new_possession)
+            print("player actions - get tackled func:", player_actions)  # Loop through each player
         for i in range(self.num_players // 2):
             if verbose:
                 print(f"{i} player action:", player_actions[i])
-            # Check if the player wants to tackle
-            if player_actions[1] == 1:
-                # Get the player's orientation and position
+                print("player actions, new possession", player_actions, new_possession)
+            if player_actions[1] == 1 and new_possession[i] == 0:
+                # Get the player's position
                 player1_position = [player_positions[(i * 2)], player_positions[(i * 2) + 1]]
 
-                # Loop through the other players
-                for j in range(self.num_players):
-                    # Check if the other player has the ball
-                    if new_possession[j]:
-                        # Get the other player's orientation and position
-                        player2_position = [player_positions[(j * 2)], player_positions[(j * 2) + 1]]
-                        # print("player position1 and 2:", player1_position, player2_position)
+                if i < self.num_players // 2:
+                    for j in range(self.num_players // 2, self.num_players):
+                        # Check if the other player has the ball
+                        if verbose:
+                            print("new possession", new_possession)
+                        if new_possession[j]:
+                            # Get the other player's orientation and position
+                            player2_position = [player_positions[(j * 2)], player_positions[(j * 2) + 1]]
+                            # print("player position1 and 2:", player1_position, player2_position)
 
+                            # Check if the two players are facing each other and are within 5
+                            distance = self.find_distance(player1_position[0], player1_position[1], player2_position[0],
+                                                     player2_position[1])
+                            if verbose:
+                                print("distance:", distance)
 
-                        # Check if the two players are facing each other and are within 5
-                        distance = self.find_distance(player1_position[0], player1_position[1], player2_position[0], player2_position[1])
-                        if distance <= 50:
-                            # The player has tackled the ball
-                            new_possession[i] = 1
-                            new_possession[j] = 0
+                            if distance <= 30:
+                                # The player has tackled the ball
+                                new_possession[i] = 1
+                                new_possession[j] = 0
 
-                            # Give rewards to player who tackled successfully
-                            if player_positions.index(player1_position[0]) >= len(player_positions) // 2:
-                                self.step_reward[0] -= .05
-                                self.step_reward[1] += .05
-                                # print("reward from tackling")
-                            else:
-                                self.step_reward[0] += .05
+                                # Give rewards to player who tackled successfully
+                                self.step_reward[0] += .3
                                 self.step_reward[1] -= .05
-                                # print("reward from tackling")
-
-                        else:
-                            # If player is on second team
-                            if player_positions.index(player1_position[0]) >= len(player_positions) // 2:
-                                self.step_reward[0] += .05
-                                self.step_reward[1] -= .05
-                                # print("reward from tackling")
-
+                                if reward_verbose:
+                                    print("reward from tacklinga")
 
                             else:
                                 self.step_reward[0] -= .05
-                                self.step_reward[1] += .05
-                                # print("reward from tackling")
+                                if reward_verbose:
+                                    print("reward from tacklingb")
+                else:
+                    # Loop through the other players
+                    for j in range(self.num_players // 2):
+                        # Check if the other player has the ball
+                        if new_possession[j]:
 
+                            # Get the other player's orientation and position
+                            player2_position = [player_positions[(j * 2)], player_positions[(j * 2) + 1]]
 
+                            # Check if the two players are facing each other and are within 5
+                            distance = self.find_distance(player1_position[0], player1_position[1], player2_position[0],
+                                                     player2_position[1])
+                            if verbose:
+                                print("distance:", distance)
+
+                            if distance <= 30:
+                                # The player has tackled the ball
+                                new_possession[i] = 1
+                                new_possession[j] = 0
+
+                                self.step_reward[0] -= .05
+                                self.step_reward[1] += .3
+                                if reward_verbose:
+                                    print("reward from tacklinga")
+
+                            else:
+                                self.step_reward[1] -= .05
+                                if reward_verbose:
+                                    print("reward from tacklingb")
         return new_possession
 
     def generate_velocity_vector(self, player_action, player_velo):
@@ -752,12 +848,12 @@ class simple_env(gym.Env):
             print("obs 5 (last possession):", obs[3])
             print("obs 6 (ball pos):", obs[4])
             print("obs 7 (ball velo):", obs[5])
-
-        new_list = torch.tensor(self.flatten_list_of_lists(new_list))
+            print("new list:", new_list)
+        new_lists = torch.tensor(self.flatten_list_of_lists(new_list))
         if verbose:
-            print("returning obs:", new_list)
+            print("returning obs:", new_lists)
 
-        return new_list
+        return new_lists
 
     def flatten_list_of_lists(self, nested_list):
         flat_list = []
@@ -775,7 +871,6 @@ class simple_env(gym.Env):
                 return nested_list
         return flat_list
 
-
     def render(self, player_positions, player_velos, ball_position, ball_velo, timestep, mode='human'):
         screen = pygame.display.set_mode([screen_width_ft, screen_height_ft])
         # Fill the background with green
@@ -792,9 +887,9 @@ class simple_env(gym.Env):
         pygame.draw.rect(screen, (0, 0, 0), (center_x - 1, center_y - (box_height / 2), 2, box_height))
         # Draw goals
         # Goal #1:
-        pygame.draw.rect(screen, (0, 0, 0), (box_x - 17, center_y - 24, 17, 48))
+        pygame.draw.rect(screen, (0, 0, 0), (box_x - 17, center_y - 30, 17, 60))
         # Goal #2:
-        pygame.draw.rect(screen, (0, 0, 0), (box_x + box_width, center_y - 24, 17, 48))
+        pygame.draw.rect(screen, (0, 0, 0), (box_x + box_width, center_y - 30, 17, 60))
         # Move and draw the player
         if verbose:
             print("player velos:", player_velos)
@@ -817,7 +912,7 @@ class simple_env(gym.Env):
 
         # Flip the display
         pygame.display.flip()
-        self.clockobject.tick(1)
+        self.clockobject.tick(10)
 
     def close(self):
         pygame.quit()

@@ -2,17 +2,18 @@
 # by christophermao
 # 12/23/23
 import copy
+import torch
 
-from main_for_simple_env import matchups
+from main_for_simple_env import matchups, plot_durations, plot_lines, plot_mov_avg_lines
 from SimplifiedEnviornment import simple_env
 from Networks import Agent
 
-import tqdm as tqdm
+from tqdm import tqdm as tqdm
 
 global verbose
 verbose = False
 
-def create_agents(total_n_actions, n_obs, batch_size, mem_capacity, n_agents, EPS_START, EPS_END, EPS_DECAY, LR, GAMMA):
+def create_agents(total_n_actions, n_obs, batch_size=25, mem_capacity=10_000, n_agents=10, EPS_START=100, EPS_END=0.05, EPS_DECAY=100_000, LR=1e-2, GAMMA=0.99):
     # Create an agent
     agent1 = Agent(total_n_actions, n_obs, batch_size, mem_capacity, n_agents, EPS_START, EPS_END, EPS_DECAY, LR, GAMMA)
 
@@ -23,16 +24,40 @@ def create_agents(total_n_actions, n_obs, batch_size, mem_capacity, n_agents, EP
         agents.append(copy.deepcopy(Agent1))
     return agents
 
-def round_robin(Agents, extended_file_path_name=""):
+def round_robin(Agents, extended_file_path_name="", n_try=1):
+    n_training_steps = 10_000
     time_to_train = []
+
+    # Create total rewards to track rewards over time
+    total_rewards = [[0 for _ in range(n_training_steps)] for _ in range(len(Agents))]
+    total_rewards = torch.tensor(total_rewards)
+
     # Train for 1_000 round-robins
-    for i in range(50):
-        matchups(Agents, 1, env, time_to_train, render_mode=False)
-        print(f"Finished {i + 1} matchups")
-        if i % 20 == 0:
+    for i in tqdm(range(n_training_steps), desc=f"Completing {extended_file_path_name}"):
+        # save every 1000 round matchups
+        if i % 500 == 0 and i != 0:
+            rewards = matchups(Agents, 1, env, time_to_train, render_mode=False, performace=True)
             for agent in range(len(Agents)):
-                model_path = f"/Users/christophermao/Desktop/RLModels/grid_searching:1.{int(i/10)}_agent_{agent}_{extended_file_path_name}"
+                model_path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/grid_searching:{n_try}.{int(i/500)}_agent_{agent}_{extended_file_path_name}"
                 Agents[agent][0].save_models(model_path)
+        else:
+            rewards = matchups(Agents, 1, env, time_to_train, render_mode=False, performace=False)
+
+        # Add new rewards to total rewards
+        for j in range(len(Agents)):
+            total_rewards[j][i] = rewards[j]
+
+    # Plot rewards for agents
+    sum_agent_scores = torch.tensor([torch.sum(i) for i in total_rewards])
+    max_agent_score = total_rewards[torch.argmax(sum_agent_scores)]
+    avg_agent_score = torch.tensor([sum(col) / len(total_rewards) for col in zip(*total_rewards)])
+    # print(max_agent_score.shape)
+    # print(avg_agent_score.shape)
+    plot_mov_avg_lines([max_agent_score, avg_agent_score], [f"{extended_file_path_name} Avg vs Max agent rewards", "Episodes", "Reward"])
+    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} 10 Agent rewards", "Episodes", "Reward"])
+    
+
+
 
 # Create an instance of the Agent and enviornment and train the model
 env = simple_env()
@@ -66,7 +91,7 @@ n_agents = [2, 6, 10, 16]
 eps_starts = [80, 90, 100]
 eps_ends = [0.0, 0.05, 0.01]
 eps_decays = [1_000, 5_000, 10_000]
-LRs = [1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 5e-3, 5e-4, 5e-5, 5e-6, 5e-7]
+LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 gammas = [0.7, 0.85, 0.99]
 
 # # Figure out how to do this better:
@@ -78,8 +103,15 @@ gammas = [0.7, 0.85, 0.99]
 #                     for LR in range(len(LRs)):
 #                         for gamma in range(len(gammas)):
 #                             create_agents(n_actions, n_obs, batch_size, mem_capacity, eps_start, eps_end, eps_decay, LR, gamma)
+LRs = [1e-4, 1e-5, 1e-3, 1e-4, 1e-5, 1e-4]
 
+for lr in LRs:
+    Agents = create_agents(n_actions, n_obs, LR=lr)
+    round_robin(Agents, extended_file_path_name=f"LR:{lr}")
 
-for lr in tqdm(range(len(LRs))):
-    Agents = create_agents(n_actions, n_obs, LR=LRs)
-    round_robin(Agents, extended_file_path_name=f"LR: {lr}")
+# Graph: Training loss + Eval loss + comparing current vs random or elo scores
+# Graph: Avg. and max reward (high level) + 10 lines for each agent (lower level)
+# Decrease batch size: 1_000
+# re-run same learning rates
+# Try lower lrs like 0.01 0.1
+# for 1 run for 24 hours

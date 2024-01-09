@@ -22,7 +22,7 @@ global verbose
 verbose = False
 
 global reward_verbose
-reward_verbose = False
+reward_verbose = True
 
 # Pygame stuff for rendering
 field_width = 345
@@ -90,7 +90,7 @@ class Ball:
         self.y_velo = float(velo[1])
     def draw(self, surface):
         if verbose:
-            print("x and y", x, y)
+            print("x and y", self.x, self.y)
 
         # Draw ball
         pygame.draw.circle(surface, (255, 255, 255), (self.x, self.y), self.radius)
@@ -108,8 +108,6 @@ def closest_player(new_possession):
         closest_player = 1
 
     return closest_player
-
-
 
 def split_obs(obs):
     obs0 = []
@@ -165,8 +163,6 @@ def split_obs(obs):
 
     return split_obs_new
 
-
-
 def flatten_list_of_lists(nested_list):
     flat_list = []
     for sublist in nested_list:
@@ -182,7 +178,6 @@ def flatten_list_of_lists(nested_list):
         except:
             return nested_list
     return flat_list
-
 
 def close():
     pygame.quit()
@@ -217,7 +212,7 @@ player_max_speed = 20
 step_reward = [0, 0]
 
 #define timesteps
-max_steps = 200
+max_steps = 100
 current_step = 0
 
 total_ball_loc_rewardsa = 0
@@ -283,14 +278,14 @@ def check_ball_position(player_positions, ball_position, last_possession):
         terminated = True
         step_reward[0] -= 2
         step_reward[1] += 2
-        print("An Agent Scored!")
+        print("An Agent Scored! adding reward to team 2")
 
     # If ball is in right goal
     elif ball_position[0] > center_goal_position_x2 - 10 and ball_position[1] < center_goal_position_y + 30 and ball_position[1] > center_goal_position_y - 30:
        terminated = True
        step_reward[0] += 2
        step_reward[1] -= 2
-       print("An Agent Scored!")
+       print("An Agent Scored! adding reward to team 1")
 
     # If ball is out of goal line
     elif ball_position[0] < field_bounds_x or ball_position[0] > field_bounds_x + field_width:
@@ -298,6 +293,8 @@ def check_ball_position(player_positions, ball_position, last_possession):
         # Negative reward if you dribbled out:
         neg_reward_on_possession(last_possession, reward=0.5)
         last_possession.reverse()
+        if reward_verbose:
+            print("An Agent dribbled out of bounds")
 
 
     elif ball_position[1] < field_bounds_y or ball_position[1] > field_bounds_y + field_height:
@@ -305,6 +302,8 @@ def check_ball_position(player_positions, ball_position, last_possession):
         # Neg reward if dribbled out
         neg_reward_on_possession(last_possession, reward=0.3)
         last_possession.reverse()
+        if reward_verbose:
+            print("An Agent dribbled out of bounds")
 
     else:
         terminated = False
@@ -316,10 +315,12 @@ def neg_reward_on_possession(last_possession, reward):
     if last_possession == [0, 1]:
         step_reward[1] -= reward
         if reward_verbose:
+            print("giving neg reward to team:", last_possession)
             print("neg reward out of bounds:", reward)
     else:
         step_reward[0] -= reward
         if reward_verbose:
+            print("giving neg reward to team:", last_possession)
             print("neg reward out of bounds:", reward)
 
 def get_ball(player_positions, ball_position, last_possession, ball_or_not):
@@ -341,8 +342,13 @@ def get_ball(player_positions, ball_position, last_possession, ball_or_not):
                 print("True")
             new_ball_or_not = [0 for i in range(num_players)]
             new_ball_or_not[i] = 1 # find index of player inside of player_positions
-
-            last_possession.reverse()
+            if last_possession == [0, 0]:
+                if i <= num_players / 2:
+                    last_possession = [0, 1]
+                else:
+                    last_possession = [1, 0]
+            else:
+                last_possession.reverse()
 
             return new_ball_or_not, last_possession
     return ball_or_not, last_possession
@@ -383,24 +389,24 @@ def out_of_bounds_reward(player_positions):
     if player_position0[0] < field_bounds_x or player_position0[0] > field_width + field_bounds_x:
         step_reward[0] -= 0.1
         if reward_verbose:
-            print("Out of bounds reward")
+            print("Out of bounds reward to team 1")
 
     if player_position0[1] < field_bounds_y or player_position0[1] > field_height + field_bounds_y:
         step_reward[0] -= 0.1
         if reward_verbose:
-            print("Out of bounds reward")
+            print("Out of bounds reward to team 1")
 
 
     if player_position1[0] < field_bounds_x or player_position1[0] > field_width + field_bounds_x:
         step_reward[1] -= 0.1
         if reward_verbose:
-            print("Out of bounds reward")
+            print("Out of bounds reward to team 2")
 
 
     if player_position1[1] < field_bounds_y or player_position1[1] > field_height + field_bounds_y:
         step_reward[1] -= 0.1
         if reward_verbose:
-            print("Out of bounds reward")
+            print("Out of bounds reward to team 2")
 
 def move_ball(player_positions, ball_or_not, ball_position, ball_velo):
     new_ball_position = ball_position
@@ -510,12 +516,12 @@ def get_tackled(player_positions, player_actions, new_possession):
                             step_reward[0] += .05
                             step_reward[1] -= .05
                             if reward_verbose:
-                                print("reward from tacklinga")
+                                print("reward from tacklinga player 1 adding reward to team 1")
 
                         else:
                             step_reward[0] -= .03
                             if reward_verbose:
-                                print("reward from tacklingb")
+                                print("reward from tacklingb player 1")
             else:
                 # Loop through the other players
                 for j in range(num_players // 2):
@@ -539,12 +545,12 @@ def get_tackled(player_positions, player_actions, new_possession):
                             step_reward[0] -= .05
                             step_reward[1] += .05
                             if reward_verbose:
-                                print("reward from tacklinga")
+                                print("reward from tacklinga player 2 adding reward to team 2")
 
                         else:
                             step_reward[1] -= .03
                             if reward_verbose:
-                                print("reward from tacklingb")
+                                print("reward from tacklingb player 2")
 
 
 
@@ -589,13 +595,13 @@ def render(player_positions, player_velos, ball_position, ball_velo, timestep, p
                 if count == 0:
                     # Blue player movement
                     if keys[pygame.K_LEFT]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(-10, 0, 0, 0)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(-50, 0, 0, 0)
                     if keys[pygame.K_RIGHT]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(10, 0, 0, 0)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(50, 0, 0, 0)
                     if keys[pygame.K_UP]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, -10, 0, 0)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, -50, 0, 0)
                     if keys[pygame.K_DOWN]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, 10, 0, 0)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, 50, 0, 0)
                     if keys[pygame.K_l]:
                         if verbose:
                             print("Attempting to tackle - player positions:", player_positions)
@@ -604,13 +610,13 @@ def render(player_positions, player_velos, ball_position, ball_velo, timestep, p
                 else:
                     # Red player movement
                     if keys[pygame.K_a]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(-10, 0, 0, 1)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(-50, 0, 0, 1)
                     if keys[pygame.K_d]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(10, 0, 0, 1)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(50, 0, 0, 1)
                     if keys[pygame.K_w]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, -10, 0, 1)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, -50, 0, 1)
                     if keys[pygame.K_s]:
-                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, 10, 0, 1)
+                        player_positions[count * 2], player_positions[(count * 2) + 1] = player.move(0, 50, 0, 1)
                     if keys[pygame.K_SPACE]:
                         if verbose:
                             print("Attempting to tackle - player positions:", player_positions)
@@ -635,22 +641,15 @@ def render(player_positions, player_velos, ball_position, ball_velo, timestep, p
 
     # Flip the display
     pygame.display.flip()
-    clockobject.tick(10)
+    clockobject.tick(5)
     if verbose:
         print("render mode - player positions:", player_positions)
-
     return player_positions, new_possession
 
 
 obs, _ = reset()
 player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo = split_obs(obs)
 while True:
-
-    # if verbose:
-    #     print("183 check player positions:", player_positions)
-    #     print("184 last posession:", last_possession)
-    #     print("185 ball or not", ball_or_not)
-    # reset step_reward
     step_reward = [0, 0]
 
 
@@ -671,16 +670,15 @@ while True:
 
 
         Players = []
-        player = Player(player_positions[0], player_positions[1])
-        Players.append(player)
         # Create a Player object
         if verbose:
             print("625 player positions", player_positions)
-            print("626 player positions", num_players)
-        for i in range(1, num_players):
+        for i in range(num_players):
             # print(i)
             new_player = Player(player_positions[i * 2], player_positions[(i * 2) + 1])
-            print("new player:", new_player)
+            if verbose:
+                print("new player:", new_player)
+                print("given player positions:", player_positions[i*2], player_positions[i*2 + 1])
             Players.append(new_player)
         # Create ball
         ball = Ball()
@@ -696,7 +694,7 @@ while True:
         print("190 check player positions:", player_positions)
         print("192 ball or not", ball_or_not)
         print("213 player velos:", player_velos)
-        print("191 last posession:", last_possession)
+        print("191 last possession:", last_possession)
 
     ball_or_not, last_possession = get_ball(player_positions, ball_position, last_possession, ball_or_not)
 
@@ -739,7 +737,7 @@ while True:
     if verbose:
         print("671 player positions", player_positions)
         print("step reward:", torch.tensor(step_reward))
-
+    print("741 last_possession:", last_possession)
     timestep += 1
 
     if terminated:

@@ -15,7 +15,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from Networks import Agent
+from Networks import Agent, ptAgent
 from SimplifiedEnviornment import simple_env
 
 import copy
@@ -128,7 +128,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
                 for i in range(len(Agents)):
                     # print(Agents[i][0])
                     if verbose:
-                        print("Optimization for:", Agents[i][0])
+                        print("Soft update for:", Agents[i][0])
                         # print("Agent num:", Agents.index(agent))
                         # Perform one step of the optimization (on the policy network)
                         print("timestep:", t)
@@ -216,7 +216,30 @@ def plot_durations(reward, names, show_result=False):
     if not show_result:
         plt.show()  # Display the plot in the console
 
-def performance_matrix(data):
+def plot_lines(data, labels):
+    for i in range(len(data)):
+        plt.plot(data[i])
+
+    plt.title(labels[0])
+    plt.xlabel(labels[1])
+    plt.ylabel(labels[2])
+    plt.show()
+
+def plot_mov_avg_lines(data, labels, filter=100):
+    new_data = moving_average(data, filter=100)
+    plt.plot(new_data)
+
+    plt.title(labels[0])
+    plt.xlabel(labels[1])
+    plt.ylabel(labels[2])
+    plt.show()
+
+def moving_average(a, n=3): # Credit: https://stackoverflow.com/questions/14313510/how-to-calculate-rolling-moving-average-using-python-numpy-scipy
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+def performance_matrix(data, title=None):
     # Creates a performance matrix for a set of agents with names.
     matrix = np.array([[0 for _ in range(10)] for _ in range(10)], dtype=float) # TODO if i change n agents
 
@@ -224,6 +247,8 @@ def performance_matrix(data):
     for row, col in data:
         matrix[row][col] = data[(row, col)]
 
+    if title:
+        plt.title(title)
     # print(matrix)
     plt.matshow(matrix)
     plt.colorbar()
@@ -273,19 +298,29 @@ def discrete_to_one_hot_vector(one_hot_vector, list_length):
 
 def create_agents(n_agents, total_n_actions, n_obs):
     # Create an agent
-    agent1 = Agent(total_n_actions, n_obs)
+    agent1 = [Agent(total_n_actions, n_obs)]
 
-    Agent1 = [agent1]
     agents = []
     for _ in range(n_agents):
         # Copy agents for num agents needed
-        agents.append(copy.deepcopy(Agent1))
+        agents.append(copy.deepcopy(agent1))
     return agents
 
+def get_agents(n_agents, n_actions, start_path, end_path1_policy_net, end_path2_target_net, steps_done=0):
+    Agents = []
+    for i in range(n_agents):
+        new_agent = [ptAgent(n_actions, torch.load(f"{start_path}{i}{end_path1_policy_net}"),
+                            torch.load(f"{start_path}{i}{end_path2_target_net}"), EPS_END=0.2, steps_done=steps_done)]
+        Agents.append(new_agent)
+    return Agents
+
+
+
 # Define matchups and create performance matrix
-def matchups(agents, n_episodes, env, time_to_train, render_mode = False):
+def matchups(agents, n_episodes, env, time_to_train, render_mode = False, performace = True):
     n_agents = len(agents)
     data = {}
+    total_rewards = [0 for _ in range(len(agents))]
 
     # print(render_mode)
     for i in range(n_agents):
@@ -297,57 +332,22 @@ def matchups(agents, n_episodes, env, time_to_train, render_mode = False):
             data[(i, j)] = rewards[0].reshape(1, 1)
             data[(j, i)] = rewards[1].reshape(1, 1)
             time_to_train.append(end_time-start_time)
+            total_rewards[i] += rewards[0]
+            total_rewards[j] += rewards[1]
+
             # sum_rewards0.append(rewards[0])
             # sum_rewards1.append(rewards[1])
             # print("Sum rewards:", rewards)
     start_time = time.time()
     for i in range(n_agents):
-        Agents[i][0].optimize_model()
+        agents[i][0].optimize_model()
     # print("time for optimization steps:", time.time() - start_time)
-    plot_durations(time_to_train, ["Time to train", "Time (sec)", "Episodes"], show_result=True)
     # plot_durations(time6, ["Time for soft udpate", "Time (sec)", "Episodes"], show_result=True)
     # plot_durations(sum_rewards0, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
     # plot_durations(sum_rewards1, ["Sum Rewards0", "Episodes", "Rewards"], show_result=True)
 
     # print("data", data)
-    performance_matrix(data)
+    if performace:
+        performance_matrix(data)
 
-
-# Create an instance of the Agent and enviornment and train the model
-env = simple_env()
-n_agents = 10
-# Reset env and get obs length
-state, n_obs = env.reset()
-
-if verbose:
-    print("state:", state, " n_obs:", n_obs)
-
-# Get number of actions from gym action space
-# n_actions = extract_action_space_numbers(env.action_space)
-# print(n_actions)
-# n_actions = n_actions[:len(n_actions)//2]
-# print(n_actions)
-n_actions = 8 # TODO fix this at some point so that it actually calculates it from the env
-
-# Convert list to num of possible outputs
-if verbose:
-    print("total_n_actions: ", n_actions)
-    print("total action + obs", n_actions, n_obs)
-
-
-# Create the agents
-Agents = create_agents(n_agents, n_actions, n_obs)
-time_to_train = []
-
-# Train for 1_000 round-robins
-for i in range(1000):
-# for i in range(100):
-    matchups(Agents, 1, env, time_to_train, render_mode=False)
-    print(f"Finished {i + 1} matchups")
-    if i % 50 == 0:
-        for agent in range(len(Agents)):
-            model_path = f"/Users/christophermao/Desktop/RLModels/2.0.{int(i/10)}save_for_agent{agent}"
-            Agents[agent][0].save_models(model_path)
-
-# TODO: we can test how our model is training by comparing it to past agents, so take WR and rewards
-# 40 is intresting
+    return torch.tensor(total_rewards)

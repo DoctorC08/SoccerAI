@@ -1,10 +1,11 @@
 import gymnasium as gym
 import math
 import random
+import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import namedtuple, deque
-from itertools import count
+from itertools import count, combinations
 
 import torch
 import torch.nn as nn
@@ -28,6 +29,15 @@ from collections import namedtuple, deque
 from itertools import count
 
 import copy
-lists = [5, 6, 7]
-for i, l in enumerate(lists):
-    print(i, l)
+
+import time
+from tqdm.auto import tqdm
+list_data = [1, 2, 3, 4, 20, 6, 7, 8, 9, 10]
+
+def moving_average(a, n=3): # Credit: https://stackoverflow.com/questions/14313510/how-to-calculate-rolling-moving-average-using-python-numpy-scipy
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+new_list = moving_average(list_data)
+print(new_list)

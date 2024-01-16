@@ -76,7 +76,10 @@ class CircularBuffer(object):
         if self.is_full_buffer:
             return self.buffer_size
         else:
-            return self.index
+            if self.index >= 0:
+                return self.index
+            else:
+                return 0
 
 
 class DQN(nn.Module): # Add: Double + Dueling DQN
@@ -99,7 +102,7 @@ class DQN(nn.Module): # Add: Double + Dueling DQN
         return self.model(x)
 
 class Agent:
-    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, n_agents=10, EPS_START=100, EPS_END=0.20, EPS_DECAY=100_000, LR=1e-2, GAMMA=0.99):
+    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, n_agents=10, EPS_START=1, EPS_END=.10, EPS_DECAY=1_000, LR=1e-2, GAMMA=0.99):
         self.n_actions = n_actions
         self.n_agents = n_agents                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
         self.BATCH_SIZE = batch_size * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer

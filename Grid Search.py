@@ -4,7 +4,7 @@
 import copy
 import torch
 
-from main_for_simple_env import matchups, plot_durations, plot_lines, plot_mov_avg_lines
+from main_for_simple_env import matchups, plot_durations, plot_lines, plot_mov_avg_lines, single_player_matchups
 from SimplifiedEnviornment import simple_env
 from Networks import Agent
 
@@ -35,13 +35,13 @@ def round_robin(Agents, extended_file_path_name="", n_try=1):
     # Train for 1_000 round-robins
     for i in tqdm(range(n_training_steps), desc=f"Completing {extended_file_path_name}"):
         # save every 1000 round matchups
-        if i % 500 == 0 and i != 0:
-            rewards = matchups(Agents, 1, env, time_to_train, render_mode=False, performace=True)
+        if i % n_training_steps-1 == 0 and i != 0:
+            rewards = matchups(Agents, 1, env, time_to_train, render_mode=True, performace=True)
             for agent in range(len(Agents)):
                 model_path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/grid_searching:{n_try}.{int(i/500)}_agent_{agent}_{extended_file_path_name}"
                 Agents[agent][0].save_models(model_path)
         else:
-            rewards = matchups(Agents, 1, env, time_to_train, render_mode=False, performace=False)
+            rewards = matchups(Agents, 1, env, time_to_train, render_mode=True, performace=False)
 
         # Add new rewards to total rewards
         for j in range(len(Agents)):
@@ -53,15 +53,54 @@ def round_robin(Agents, extended_file_path_name="", n_try=1):
     avg_agent_score = torch.tensor([sum(col) / len(total_rewards) for col in zip(*total_rewards)])
     # print(max_agent_score.shape)
     # print(avg_agent_score.shape)
-    plot_mov_avg_lines([max_agent_score, avg_agent_score], [f"{extended_file_path_name} Avg vs Max agent rewards", "Episodes", "Reward"])
-    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} 10 Agent rewards", "Episodes", "Reward"])
-    
+    # print(total_rewards.shape)
+    # print(total_rewards)
+    plot_lines([max_agent_score, avg_agent_score], [f"{extended_file_path_name} Avg vs Max agent rewards", "Episodes", "Reward"])
+    plot_lines(total_rewards, [f"{extended_file_path_name} 10 Agent rewards", "Episodes", "Reward"])
 
+    plot_mov_avg_lines([max_agent_score, avg_agent_score], [f"{extended_file_path_name} Avg vs Max agent rewards", "Episodes", "Reward"], filter=10)
+    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} 10 Agent rewards", "Episodes", "Reward"], filter=10)
+    
+def single_agent_training(agent, n_training_steps, extended_file_path_name="", n_try=1, render_mode=False):
+    # Create total rewards to track rewards over time
+    total_rewards = [0.0 for _ in range(n_training_steps)]
+    total_rewards = torch.tensor(total_rewards)
+
+    # Train for 1_000 round-robins
+    for i in range(n_training_steps):
+        # save last training step
+        if i % 1_000 == 0 and i != 0:
+            if verbose:
+                print("saving model at timestep:", i)
+            rewards = single_player_matchups(agent, env, render_mode=render_mode)
+            model_path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{n_try}.{i/1000}_{extended_file_path_name}_agent"
+            agent.save_models(model_path)
+        else:
+            rewards = single_player_matchups(agent, env, render_mode=render_mode)
+
+        if i % 10:
+            # Soft update of the target network's weights
+            # θ′ ← τ θ + (1 −τ )θ′
+            target_net_state_dict = agent.target_net.state_dict()
+            policy_net_state_dict = agent.policy_net.state_dict()
+
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (
+                        1 - agent.TAU)
+            agent.target_net.load_state_dict(target_net_state_dict)
+
+        # Add new rewards to total rewards
+        # print(rewards)
+        total_rewards[i] = rewards[0]
+    if verbose:
+        print(total_rewards)
+    plot_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (raw data)", "Episodes", "Reward"])
+    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (avg)", "Episodes", "Reward"], filter=10)
 
 
 # Create an instance of the Agent and enviornment and train the model
 env = simple_env()
-n_agents = 10
+n_agents = 1
 # Reset env and get obs length
 state, n_obs = env.reset()
 
@@ -70,7 +109,7 @@ state, n_obs = env.reset()
 # print(n_actions)
 # n_actions = n_actions[:len(n_actions)//2]
 # print(n_actions)
-n_actions = 8 # TODO fix this at some point so that it actually calculates it from the env
+n_actions = 4 # TODO fix this at some point so that it actually calculates it from the env
 
 # Convert list to num of possible outputs
 if verbose:
@@ -93,21 +132,12 @@ eps_ends = [0.0, 0.05, 0.01]
 eps_decays = [1_000, 5_000, 10_000]
 LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 gammas = [0.7, 0.85, 0.99]
-
-# # Figure out how to do this better:
-# for batch_size in range(len(batch_sizes)):
-#     for mem_capacity in range(len(mem_capacities)):
-#         for eps_start in range(len(eps_starts)):
-#             for eps_end in range(len(eps_ends)):
-#                 for eps_decay in range(len(eps_decays)):
-#                     for LR in range(len(LRs)):
-#                         for gamma in range(len(gammas)):
-#                             create_agents(n_actions, n_obs, batch_size, mem_capacity, eps_start, eps_end, eps_decay, LR, gamma)
-LRs = [1e-4, 1e-5, 1e-3, 1e-4, 1e-5, 1e-4]
-
+# LRs = [1e-2, 1e-3, 1e-4, 1e-5]
+LRs = [1e-2, 1e-3, 1e-4, 1e-5]
 for lr in LRs:
-    Agents = create_agents(n_actions, n_obs, LR=lr)
-    round_robin(Agents, extended_file_path_name=f"LR:{lr}")
+    for i in tqdm(range(5), desc=f"Training LR:{lr}"):
+        agent = Agent(n_actions, n_obs, LR=lr)
+        single_agent_training(agent, n_training_steps=10_000, extended_file_path_name=f"LR_{lr}", n_try=i, render_mode=False)
 
 # Graph: Training loss + Eval loss + comparing current vs random or elo scores
 # Graph: Avg. and max reward (high level) + 10 lines for each agent (lower level)

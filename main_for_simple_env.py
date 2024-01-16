@@ -122,7 +122,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
             start_time = time.time()
             # Move to the next state
             observation = next_state
-            if t % 100:
+            if t % 40:
                 end_timea = time.time()
                 # print("agent:", Agents)
                 for i in range(len(Agents)):
@@ -197,6 +197,104 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
     # plot_durations(rewards1, "rewards 1", show_result=False)
     return [sum(rewards0), sum(rewards1)], time6
 
+def single_agent_train(agent, env, render_mode): # Agents is a list of Agents
+    # take training time data
+    rewards0 = []
+    rewards1 = []
+
+    # print(f"Starting Training for {i_episode} Episode")
+    # Initialize the environment and get it's obs
+    observation, _ = env.reset()
+    # observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
+    observation = observation.clone().detach().to(dtype=torch.float32).unsqueeze(0)
+
+    for t in count():
+        if verbose:
+            print("observation:", observation, "len obs:", len(observation[0]))
+            print("Agents:", agent)
+        # Get actions from agents
+        action = agent.select_action(observation).squeeze()
+
+        observation = observation.squeeze(0)
+
+        if verbose:
+            print("action1:", action)
+
+        # Convert actions from numbers into lists
+        new_action = action # TODO change this final list if I ever change action shape
+
+        # reform action lists, so env can read it properly
+        if verbose:
+            print("OHE actions:", action)
+            print("new action1:", new_action)
+
+        # Lower obs space for step function
+        observation, reward, terminated, truncated = env.step(observation, [new_action], t, render_mode)
+        reward = reward.clone().detach()
+        reward = add_outer_dimension(reward)
+        done = terminated or truncated
+
+        if done:
+            next_state = None
+        else:
+            next_state = observation.clone().detach().to(dtype=torch.float32, device=device).unsqueeze(0)
+
+
+        # Store the transition in memory
+        agent.memory.push(observation, action.clone().detach(), next_state, reward[0].clone().detach())
+
+        # Move to the next state
+        observation = next_state
+
+        rewards0.append(reward[0])
+        rewards1.append(reward[1])
+
+        if done:
+
+            # plot_durations(rewards0, show_result=False)
+            # print("Finished an episode")
+            break
+    # print("\n\nTime for selecting actions:")
+    # print("Max time:", max(time0))
+    # print("total time:", sum(time0))
+    # print("avg time:", sum(time0) / len(time0))
+    #
+    # print("\n\nTime for env.step:")
+    # print("Max time:", max(time1))
+    # print("total time:", sum(time1))
+    # print("avg time:", sum(time1) / len(time1))
+    #
+    # print("\n\nTime for storing obs:")
+    # print("Max time:", max(time2))
+    # print("total time:", sum(time2))
+    # print("avg time:", sum(time2) / len(time2))
+    #
+    # print("\n\nTime for optimization step:")
+    # print("Max time:", max(time3))
+    # print("total time:", sum(time3))
+    # print("avg time:", sum(time3) / len(time3))
+    #
+    # # print("\nTime for optimizing model:")
+    # # print("Max time:", max(time4))
+    # # print("total time:", sum(time4))
+    # # print("avg time:", sum(time4) / len(time4))
+    #
+    # # print("\nTime for soft update a:")
+    # # print("Max time:", max(time5))
+    # # print("total time:", sum(time5))
+    # # print("avg time:", sum(time5) / len(time5))
+    #
+    # print("\nTime for soft update:")
+    # print("Max time:", max(time6))
+    # print("total time:", sum(time6))
+    # print("avg time:", sum(time6) / len(time6))
+
+
+    # print('\n\nTraining complete')
+    # plot_durations(rewards0, "rewards 0", show_result=False)
+    # plot_durations(rewards1, "rewards 1", show_result=False)
+    return [sum(rewards0), sum(rewards1)]
+
 def plot_durations(reward, names, show_result=False):
     plt.figure(1)
     reward_t = torch.tensor(reward, dtype=torch.float)
@@ -217,16 +315,16 @@ def plot_durations(reward, names, show_result=False):
         plt.show()  # Display the plot in the console
 
 def plot_lines(data, labels):
-    for i in range(len(data)):
-        plt.plot(data[i])
-
+    # for i in range(len(data)):
+    #     plt.plot(data[i])
+    plt.plot(data)
     plt.title(labels[0])
     plt.xlabel(labels[1])
     plt.ylabel(labels[2])
     plt.show()
 
 def plot_mov_avg_lines(data, labels, filter=100):
-    new_data = moving_average(data, filter=100)
+    new_data = moving_average(data, n=filter)
     plt.plot(new_data)
 
     plt.title(labels[0])
@@ -351,3 +449,10 @@ def matchups(agents, n_episodes, env, time_to_train, render_mode = False, perfor
         performance_matrix(data)
 
     return torch.tensor(total_rewards)
+
+def single_player_matchups(agent, env, render_mode=False):
+    # Loop for n_episodes:
+    rewards = single_agent_train(agent, env, render_mode)
+    agent.optimize_model()
+
+    return rewards[0].clone().detach()

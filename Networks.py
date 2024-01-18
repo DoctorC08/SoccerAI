@@ -102,10 +102,9 @@ class DQN(nn.Module): # Add: Double + Dueling DQN
         return self.model(x)
 
 class Agent:
-    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, n_agents=10, EPS_START=1, EPS_END=.10, EPS_DECAY=1_000, LR=1e-2, GAMMA=0.99):
+    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, EPS_START=1, EPS_END=.10, EPS_DECAY=1_000, LR=1e-2, GAMMA=0.99):
         self.n_actions = n_actions
-        self.n_agents = n_agents                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = batch_size * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.BATCH_SIZE = batch_size * 10   # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = GAMMA                       # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = EPS_START                    # EPS_START is the starting value of epsilon
         self.EPS_END = EPS_END                     # EPS_END is the final value of epsilon
@@ -143,6 +142,9 @@ class Agent:
             # print("RANDOM ACTION")
             return torch.tensor(random.randint(0, self.n_actions - 1), device=device, dtype=torch.long)
 
+    def non_random_action(self, state):
+        with torch.no_grad():
+            return torch.argmax(self.policy_net(state))
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
@@ -205,7 +207,6 @@ class Agent:
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
@@ -213,6 +214,7 @@ class Agent:
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
+        return loss
 
     def convert_list_of_tensors_to_tensor(self, tensor_list):
         list_of_tensors = [torch.tensor(item) for sublist in tensor_list for item in sublist]
@@ -223,72 +225,6 @@ class Agent:
         torch.save(self.policy_net, model_path + "_policy_net.pt")
         torch.save(self.target_net, model_path + "_target_net.pt")
 
-
-# training and plot duration funcs:
-    #
-    # def train(self, num_episodes = 600):
-    #     for i_episode in range(num_episodes):
-    #         print(f"Starting Training for {i_episode} Episode")
-    #         # Initialize the environment and get it's state
-    #         state = self.env.reset()
-    #         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-    #         for t in count():
-    #             action = self.select_action(state)
-    #             observation, reward, terminated, truncated, _ = self.env.step(action.item())
-    #             self.episode_reward = reward
-    #             reward = torch.tensor([reward], device=device)
-    #             done = terminated or truncated
-    #
-    #             if terminated:
-    #                 next_state = None
-    #             else:
-    #                 next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
-    #
-    #             # Store the transition in memory
-    #             self.memory.push(state, action, next_state, reward)
-    #
-    #             # Move to the next state
-    #             state = next_state
-    #
-    #             # Perform one step of the optimization (on the policy network)
-    #             self.optimize_model()
-    #
-    #             # Soft update of the target network's weights
-    #             # θ′ ← τ θ + (1 −τ )θ′
-    #             target_net_state_dict = self.target_net.state_dict()
-    #             policy_net_state_dict = self.policy_net.state_dict()
-    #             for key in policy_net_state_dict:
-    #                 target_net_state_dict[key] = policy_net_state_dict[key] * self.TAU + target_net_state_dict[key] * (1 - self.TAU)
-    #             self.target_net.load_state_dict(target_net_state_dict)
-    #
-    #             if done:
-    #                 self.episode_durations.append(t + 1)
-    #                 self.plot_durations(reward, show_result=False, )
-    #                 break
-    #
-    #     print('Training complete')
-    #     self.plot_durations(100, show_result=True)
-    #
-    # def plot_durations(self, reward, show_result=False):
-    #     plt.figure(1)
-    #     durations_t = torch.tensor(reward, dtype=torch.float)
-    #
-    #     if show_result:
-    #         plt.title('Result')
-    #     else:
-    #         plt.clf()
-    #         plt.title('Training...')
-    #     plt.xlabel('Episode')
-    #     plt.ylabel('Rewards')
-    #     plt.plot(durations_t.numpy())
-    #     if len(durations_t) >= 100:
-    #         means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-    #         means = torch.cat((torch.zeros(99), means))
-    #         plt.plot(means.numpy())
-    #
-    #     plt.pause(0.001)
-    #     if not show_result:
-    #         plt.show()  # Display the plot in the console #
 
 
 class ptAgent:

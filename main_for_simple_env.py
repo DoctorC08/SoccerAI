@@ -17,6 +17,7 @@ import torch.nn.functional as F
 
 from Networks import Agent, ptAgent
 from SimplifiedEnviornment import simple_env
+from Agent_Testing import single_agent_testing
 
 import copy
 import pandas as pd
@@ -197,7 +198,7 @@ def train(Agents, env, render_mode, num_episodes=600): # Agents is a list of Age
     # plot_durations(rewards1, "rewards 1", show_result=False)
     return [sum(rewards0), sum(rewards1)], time6
 
-def single_agent_train(agent, env, render_mode): # Agents is a list of Agents
+def single_agent_train(agent, env, render_mode):
     # take training time data
     rewards0 = []
     rewards1 = []
@@ -453,6 +454,14 @@ def matchups(agents, n_episodes, env, time_to_train, render_mode = False, perfor
 def single_player_matchups(agent, env, render_mode=False):
     # Loop for n_episodes:
     rewards = single_agent_train(agent, env, render_mode)
-    agent.optimize_model()
+    loss = agent.optimize_model()
 
-    return rewards[0].clone().detach()
+    return rewards[0].clone().detach(), loss
+
+def single_agent_eval(agent, env, times_to_test, render_mode=False):
+    total_rewards = [0 for _ in range(times_to_test)]
+    for t in range(times_to_test):
+        rewards = single_agent_testing(agent, env, render_mode=render_mode)
+        total_rewards[t] = rewards[0]
+
+    return total_rewards

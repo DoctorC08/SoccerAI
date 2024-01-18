@@ -24,12 +24,24 @@ from tqdm import tqdm
 
 from torch.optim import AdamW
 
-from main_for_simple_env import performance_matrix
-
 global verbose
 verbose = False
 
 
+def performance_matrix(data, title=None):
+    # Creates a performance matrix for a set of agents with names.
+    matrix = np.array([[0 for _ in range(10)] for _ in range(10)], dtype=float) # TODO if i change n agents
+
+    # Populate the matrix with values from the dictionary
+    for row, col in data:
+        matrix[row][col] = data[(row, col)]
+
+    if title:
+        plt.title(title)
+    # print(matrix)
+    plt.matshow(matrix)
+    plt.colorbar()
+    plt.show()
 
 def map_output_to_actions(output):
     if verbose:
@@ -92,9 +104,9 @@ def single_agent_testing(agent, env, render_mode):
             print("observation:", observation, "len obs:", len(observation[0]))
             print("Agents:", agent)
         # Get actions from agents
-        action = torch.argmax(agent(observation))
-
         observation = observation.squeeze(0)
+
+        action = agent.non_random_action(observation)
 
         if verbose:
             print("action1:", action)
@@ -178,7 +190,7 @@ def single_player_testing(file_path_start, file_path_mid, file_path_end, num_pla
                 path = f"{file_path_start}{j}{file_path_mid}{i}{file_path_end}"
                 agents = [torch.load(path)]
 
-                rewards = single_agent_testing(agents, env, render_mode=True)
+                rewards = single_agent_testing(agents, env, render_mode=False)
                 data[i] += int(sum(rewards[0]))
                 data[i] += int(sum(rewards[1]))
 
@@ -217,23 +229,8 @@ state, n_obs = env.reset()
 # LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 LRs = [1e-4]
 versions = 1
-for lr in LRs:
-    for i in range(versions):
-        path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{i}.9.0_LR_5e-05_agent_policy_net.pt"
-        path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_3.2.0_LR_1e-05_agent_policy_net.pt"
-        single_player_testing2(path, times_tested_per_matchup=1, render_mode=True)
-# Graph with moving average
-# Matplotlib plotting function: fill between (use transparent and plot from high values to low values
-
-# one agent with stil ball position
-# One agent with moving ball
-# One agent vs random
-
-# Eval: as often as possible without it being too burdensome
-# Run 8 episodes and take average or plot min avg max
-
-# Plot loss curves, MS of paramaters
-
-# Plot random agent
-# Be careful of broadcasting: making sure shapes of tensors are right size
-
+# for lr in LRs:
+#     for i in range(versions):
+#         path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{i}.9.0_LR_5e-05_agent_policy_net.pt"
+#         path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_3.2.0_LR_1e-05_agent_policy_net.pt"
+#         single_player_testing2(path, times_tested_per_matchup=1, render_mode=True)

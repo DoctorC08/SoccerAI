@@ -66,18 +66,19 @@ def single_agent_training(agent, n_training_steps, extended_file_path_name="", n
     # Create total rewards to track rewards over time
     total_rewards = [0.0 for _ in range(n_training_steps)]
     total_rewards = torch.tensor(total_rewards)
-    eval_rewards = [0.0 for _ in range(n_training_steps // 10)]
+    eval_rewards = [0.0 for _ in range(n_training_steps // 50)]
     eval_rewards = torch.tensor(eval_rewards)
     total_loss = [0.0 for _ in range(n_training_steps)]
+    total_loss = torch.tensor(total_loss, requires_grad=False)
 
     # Train for 1_000 round-robins
     for i in range(n_training_steps):
         # save last training step
-        if i % 1_000 == 0 and i != 0:
+        if i % 500 == 0 and i != 0:
             if verbose:
                 print("saving model at timestep:", i)
             rewards, loss = single_player_matchups(agent, env, render_mode=render_mode)
-            model_path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{n_try}.{i/1000}_{extended_file_path_name}_agent"
+            model_path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{n_try}.{i/500}_{extended_file_path_name}_agent"
             agent.save_models(model_path)
         else:
             rewards, loss = single_player_matchups(agent, env, render_mode=render_mode)
@@ -92,9 +93,10 @@ def single_agent_training(agent, n_training_steps, extended_file_path_name="", n
                         1 - agent.TAU)
             agent.target_net.load_state_dict(target_net_state_dict)
 
-            # Eval
-            reward = single_agent_eval(agent, env, 8, render_mode=False)
-            eval_rewards[i // 10] = sum(reward) / len(reward)
+            if i % 50:
+                # Eval
+                reward = single_agent_eval(agent, env, 10, render_mode=False)
+                eval_rewards[i // 50] = sum(reward) / len(reward)
 
         # Add new rewards to total rewards
         # print(rewards)
@@ -102,19 +104,20 @@ def single_agent_training(agent, n_training_steps, extended_file_path_name="", n
         total_loss[i] = loss
     if verbose:
         print(total_rewards)
-    # Plot training data
-    plot_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (raw data)", "Episodes", "Reward"])
-    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (avg 50)", "Episodes", "Reward"], filter=50)
-    plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (avg 100)", "Episodes", "Reward"], filter=100)
 
-    # Plot eval data
-    plot_lines(eval_rewards, [f"EVAL: {extended_file_path_name} Agent rewards (raw data)", "Episodes", "Reward"])
-    plot_mov_avg_lines(eval_rewards, [f"EVAL: {extended_file_path_name} Agent rewards (avg 10)", "Episodes", "Reward"], filter=10)
+    with torch.no_grad():
+        # Plot training data
+        plot_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (raw data)", "Episodes", "Reward"])
+        plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (avg 50)", "Episodes", "Reward"], filter=50)
+        plot_mov_avg_lines(total_rewards, [f"{extended_file_path_name} Agent rewards (avg 100)", "Episodes", "Reward"], filter=100)
 
-    # Plot loss data
-    plot_lines(total_loss, [f"{extended_file_path_name} Agent loss (raw data)", "Episodes", "Loss"])
-    plot_mov_avg_lines(total_loss, [f"{extended_file_path_name} Agent loss (avg 50)", "Episodes", "Loss"], filter=50)
-    plot_mov_avg_lines(total_loss, [f"{extended_file_path_name} Agent loss (avg 100)", "Episodes", "Loss"], filter=100)
+        # Plot eval data
+        plot_lines(eval_rewards, [f"EVAL: {extended_file_path_name} Agent rewards (raw data)", "Episodes", "Reward"])
+        plot_mov_avg_lines(eval_rewards, [f"EVAL: {extended_file_path_name} Agent rewards (avg 10)", "Episodes", "Reward"], filter=10)
+        # Plot loss data
+        plot_lines(total_loss, [f"{extended_file_path_name} Agent loss (raw data)", "Episodes", "Loss"])
+        plot_mov_avg_lines(total_loss, [f"{extended_file_path_name} Agent loss (avg 50)", "Episodes", "Loss"], filter=50)
+        plot_mov_avg_lines(total_loss, [f"{extended_file_path_name} Agent loss (avg 100)", "Episodes", "Loss"], filter=100)
 
 
 
@@ -153,29 +156,17 @@ eps_decays = [1_000, 5_000, 10_000]
 LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 gammas = [0.7, 0.85, 0.99]
 # LRs = [1e-2, 1e-3, 1e-4, 1e-5]
-LRs = [1e-2, 1e-3, 1e-4, 1e-5]
+LRs = [1e-2, 1e-1]
 agent = Agent(n_actions, n_obs, EPS_END=1)
 
 # Random agent training for graph comparison
-single_agent_training(agent, n_training_steps=10_000, extended_file_path_name="random", render_mode=False)
-
-import threading
-
-threads = []
+# single_agent_training(agent, n_training_steps=10_000, extended_file_path_name="random", render_mode=False)
 
 # Training for different lrs
 for lr in LRs:
-    for i in tqdm(range(5), desc=f"Training LR:{lr}"):
+    for i in tqdm(range(10), desc=f"Training LR:{lr}"):
         agent = Agent(n_actions, n_obs, LR=lr)
-        single_agent_training(agent, n_training_steps=10_000, extended_file_path_name=f"LR_{lr}", n_try=i, render_mode=False)
-
-# Graph: Training loss + Eval loss + comparing current vs random or elo scores
-# Graph: Avg. and max reward (high level) + 10 lines for each agent (lower level)
-# Decrease batch size: 1_000
-# re-run same learning rates
-# Try lower lrs like 0.01 0.1
-# for 1 run for 24 hours
-
+        single_agent_training(agent, n_training_steps=10_000, extended_file_path_name=f"{i}_LR_{lr}", n_try=i, render_mode=False)
 
 # Graph with moving average
 # Matplotlib plotting function: fill between (use transparent and plot from high values to low values

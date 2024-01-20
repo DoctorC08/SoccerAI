@@ -101,8 +101,10 @@ class DQN(nn.Module): # Add: Double + Dueling DQN
         # print(x)
         return self.model(x)
 
+    def non_random_action(self, state):
+        return torch.argmax(self.model(state))
 class Agent:
-    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, EPS_START=1, EPS_END=.10, EPS_DECAY=1_000, LR=1e-2, GAMMA=0.99):
+    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, EPS_START=1, EPS_END=.1, EPS_DECAY=10_000, LR=1e-2, GAMMA=0.99):
         self.n_actions = n_actions
         self.BATCH_SIZE = batch_size * 10   # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = GAMMA                       # GAMMA is the discount factor as mentioned in the previous section
@@ -148,7 +150,7 @@ class Agent:
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
-            return
+            return 0
         transitions = self.memory.sample(self.BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
@@ -213,7 +215,6 @@ class Agent:
         # In-place gradient clipping
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
-
         return loss
 
     def convert_list_of_tensors_to_tensor(self, tensor_list):

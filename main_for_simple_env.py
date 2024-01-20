@@ -455,7 +455,8 @@ def single_player_matchups(agent, env, render_mode=False):
     # Loop for n_episodes:
     rewards = single_agent_train(agent, env, render_mode)
     loss = agent.optimize_model()
-
+    if verbose:
+        print("single player matchups loss", loss)
     return rewards[0].clone().detach(), loss
 
 def single_agent_eval(agent, env, times_to_test, render_mode=False):

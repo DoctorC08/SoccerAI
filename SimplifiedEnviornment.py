@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 import copy
-
+import random
 import time
 
 import math
@@ -116,7 +116,7 @@ class simple_env(gym.Env):
         self.center_goal_position_x2 = self.field_bounds_x + self.field_width
 
         # y coordinate is same for both
-        self.center_goal_position_y = (self.field_height / 2) + (self.field_bounds_y / 2)
+        self.center_goal_position_y = (self.field_height / 2) + self.field_bounds_y
 
         # Define number of players (both teams)
         self.num_players = 1
@@ -138,7 +138,7 @@ class simple_env(gym.Env):
             Discrete(4),# Movement
         ))
         # Repeat the action space num player times
-        self.action_space = Tuple([self.action_space for i in range(self.num_players)])
+        self.action_space = Tuple([self.action_space for _ in range(self.num_players)])
 
         # Define obs space
         self.observation_space = Tuple((
@@ -292,8 +292,8 @@ class simple_env(gym.Env):
         elif ball_position[0] > self.center_goal_position_x2 - 10 and ball_position[0] < self.center_goal_position_x2 + self.field_bounds_x + 50 and ball_position[1] < self.center_goal_position_y + 50 and \
                 ball_position[1] > self.center_goal_position_y - 50:
             terminated = True
-            self.step_reward[0] += 5
-            self.step_reward[1] -= 4
+            self.step_reward[0] += 1
+            self.step_reward[1] -= 1
             # print("An Agent Scored!")
 
         # If ball is out of goal line
@@ -745,7 +745,7 @@ class simple_env(gym.Env):
 
         # Flip the display
         pygame.display.flip()
-        self.clockobject.tick(1)
+        self.clockobject.tick(5)
 
     def close(self):
         pygame.quit()

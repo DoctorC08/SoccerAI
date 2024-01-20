@@ -229,8 +229,8 @@ state, n_obs = env.reset()
 # LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 LRs = [1e-4]
 versions = 1
-for lr in LRs:
-    for i in range(versions):
-        path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{i}.9.0_LR_5e-05_agent_policy_net.pt"
-        path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_1.17.0_1_LR_0.01_agent_policy_net.pt"
-        single_player_testing2(path, times_tested_per_matchup=1, render_mode=True)
+# for lr in LRs:
+#     for i in range(versions):
+#         path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{i}.9.0_LR_5e-05_agent_policy_net.pt"
+#         path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_1.17.0_1_LR_0.01_agent_policy_net.pt"
+#         single_player_testing2(path, times_tested_per_matchup=1, render_mode=True)

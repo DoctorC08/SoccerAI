@@ -183,3 +183,5 @@ for lr in LRs:
 # Plot random agent
 # Be careful of broadcasting: making sure shapes of tensors are right size
 
+
+# Spikes in loss function?!?

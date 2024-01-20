@@ -162,7 +162,7 @@ class simple_env(gym.Env):
 
         ball_or_not = [0 for i in range(self.num_players)] # Reset ball or not
         last_possession = [0, 0] # Reset last possession
-        ball_position = [self.field_bounds_x + self.field_width // 2, self.field_bounds_y + self.field_height // 2] # Reset ball position
+        ball_position = [self.field_bounds_x + self.field_width // 2, random.randrange(self.field_bounds_y, self.field_bounds_y + self.field_height)] # Reset ball position into random range
         ball_velo = [0, 0]
 
         return_obs = self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo])

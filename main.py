@@ -77,7 +77,6 @@ def test(Agents, env, render_mode, num_episodes=600): # Agents is a list of Agen
             new_action1 = torch.tensor([[num[0] for num in new_action1], [num[1] for num in new_action1]])
             new_action2 = torch.tensor([[num[0] for num in new_action2], [num[1] for num in new_action2]])
 
-            # Lower obs space for step function
             observation, reward, terminated, truncated = env.step(observation, [new_action1, new_action2], t, render_mode)
             reward = reward.clone().detach()
             reward = add_outer_dimension(reward)

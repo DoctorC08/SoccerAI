@@ -205,18 +205,20 @@ def single_agent_train(agent, env, render_mode):
 
     # print(f"Starting Training for {i_episode} Episode")
     # Initialize the environment and get it's obs
-    observation, _ = env.reset()
+    observation, agent_obs, _ = env.reset()
     # observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
     observation = observation.clone().detach().to(dtype=torch.float32).unsqueeze(0)
+    agent_obs = agent_obs.clone().detach().to(dtype=torch.float32).unsqueeze(0)
 
     for t in count():
         if verbose:
             print("observation:", observation, "len obs:", len(observation[0]))
             print("Agents:", agent)
         # Get actions from agents
-        action = agent.select_action(observation).squeeze()
+        action = agent.select_action(agent_obs).squeeze()
 
         observation = observation.squeeze(0)
+        agent_obs.squeeze(0)
 
         if verbose:
             print("action1:", action)
@@ -230,7 +232,7 @@ def single_agent_train(agent, env, render_mode):
             print("new action1:", new_action)
 
         # Lower obs space for step function
-        observation, reward, terminated, truncated = env.step(observation, [new_action], t, render_mode)
+        observation, agent_obs, reward, terminated, truncated = env.step(observation, [new_action], t, render_mode)
         reward = reward.clone().detach()
         reward = add_outer_dimension(reward)
         done = terminated or truncated
@@ -238,14 +240,14 @@ def single_agent_train(agent, env, render_mode):
         if done:
             next_state = None
         else:
-            next_state = observation.clone().detach().to(dtype=torch.float32, device=device).unsqueeze(0)
+            next_state = agent_obs.clone().detach().to(dtype=torch.float32, device=device).unsqueeze(0)
 
 
         # Store the transition in memory
-        agent.memory.push(observation, action.clone().detach(), next_state, reward[0].clone().detach())
+        agent.memory.push(agent_obs, action.clone().detach(), next_state, reward[0].clone().detach())
 
         # Move to the next state
-        observation = next_state
+        agent_obs = next_state
 
         rewards0.append(reward[0])
         rewards1.append(reward[1])
@@ -333,6 +335,15 @@ def plot_mov_avg_lines(data, labels, filter=100):
     plt.ylabel(labels[2])
     plt.show()
 
+def plot_multiple_mov_avg_lines(data, labels, filter=100):
+    for i in range(len(data)):
+        new_data = moving_average(data[i], n=filter)
+        plt.plot(new_data)
+
+    plt.title(labels[0])
+    plt.xlabel(labels[1])
+    plt.ylabel(labels[2])
+    plt.show()
 def moving_average(a, n=3): # Credit: https://stackoverflow.com/questions/14313510/how-to-calculate-rolling-moving-average-using-python-numpy-scipy
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
@@ -367,13 +378,6 @@ def map_output_to_actions(output):
     if verbose:
         print("return action values:", torch.tensor(return_values))
     return torch.tensor(return_values)
-
-def extract_action_space_numbers(action_space):
-    action_space_numbers = []
-    for agent_action_space in action_space:
-        for action_dim_space in agent_action_space:
-            action_space_numbers.append(action_dim_space.n)
-    return action_space_numbers
 
 def reshape_tensors_to_scalar(input_tensors):
     reshaped_tensors = []
@@ -461,8 +465,13 @@ def single_player_matchups(agent, env, render_mode=False):
 
 def single_agent_eval(agent, env, times_to_test, render_mode=False):
     total_rewards = [0 for _ in range(times_to_test)]
+    min_rewards = 1_000_000 # placeholder values
+    max_rewards = -100_000 # placeholder values
     for t in range(times_to_test):
         rewards = single_agent_testing(agent, env, render_mode=render_mode)
         total_rewards[t] = rewards[0]
-
-    return total_rewards
+        if rewards[0] < min_rewards:
+            min_rewards = rewards[0]
+        elif rewards[0] > max_rewards:
+            max_rewards = rewards[0]
+    return total_rewards, min_rewards, max_rewards

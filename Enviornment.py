@@ -191,8 +191,6 @@ class env(gym.Env):
         return_obs = self.return_obs([player_positions, player_orientations, player_velos, player_sprint_bars, ball_or_not, last_possession, ball_position, ball_velo])
         return return_obs, len(return_obs)
 
-
-
     # Player orientation will be in radians. 0 radians will be facing to the "right" in the enviornment
     def step(self, obs, player_actions, timestep, render_mode):
         # Split obs

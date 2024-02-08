@@ -118,12 +118,14 @@ class simple_env(gym.Env):
         # y coordinate is same for both
         self.center_goal_position_y = (self.field_height / 2) + self.field_bounds_y
 
+        self.goal_pos = [self.center_goal_position_x2, self.center_goal_position_y]
+
         # Define number of players (both teams)
         self.num_players = 1
         # Define player speed
         self.player_speed = 20
         # Define max player speed
-        self.player_max_speed = 50
+        self.player_max_speed = 20
 
         # Step function!
         self.step_reward = [0, 0]
@@ -166,7 +168,8 @@ class simple_env(gym.Env):
         ball_velo = [0, 0]
 
         return_obs = self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo])
-        return return_obs, len(return_obs)
+        agent_obs = self.return_agent_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo])
+        return return_obs, agent_obs, len(agent_obs)
 
     # Player orientation will be in radians. 0 radians will be facing to the "right" in the enviornment
     def step(self, obs, player_actions, timestep, render_mode):
@@ -198,25 +201,28 @@ class simple_env(gym.Env):
             self.ball = Ball()
 
         # Check whether ball is in goal or out of bounds or in goal
-        terminated, last_possession = self.check_ball_position(player_positions, ball_position, last_possession)
+        truncated, last_possession = self.check_ball_position(player_positions, ball_position, last_possession)
         if verbose:
             print("190 check player positions:", player_positions)
             print("192 ball or not", ball_or_not)
             print("213 player velos:", player_velos)
             print("191 last posession:", last_possession)
+            print("210 player action:", player_actions)
 
-        ball_or_not, last_possession = self.get_ball(player_positions, ball_position, last_possession, ball_or_not)
+        ball_or_not, last_possession, newest_truncated = self.get_ball(player_positions, ball_position, last_possession, ball_or_not)
 
 
         # Find reward based off of location
-        reward = self.ball_location_reward(ball_position)
-        if reward_verbose:
-            print("ball location reward", reward)
-        self.step_reward = [self.step_reward[i] + reward[i] for i in range(len(self.step_reward))]
+        # reward = self.ball_location_reward(ball_position)
+        # if reward_verbose:
+        #     print("ball location reward", reward)
+        # self.step_reward = [self.step_reward[i] + reward[i] for i in range(len(self.step_reward))]
 
 
         # Give negative rewards if agent is out of bounds
-        player_positions, player_velos = self.out_of_bounds_reward(player_positions, player_velos)
+        player_positions, player_velos, new_truncated = self.out_of_bounds_reward(player_positions, player_velos)
+
+        truncated = truncated or new_truncated or newest_truncated
 
         # Find new player and ball positions
         player_positions, player_velos = self.player_position(player_positions, player_velos, player_actions)
@@ -241,10 +247,13 @@ class simple_env(gym.Env):
         if render_mode == True:
             self.render(player_positions, player_velos, ball_position, ball_velo, timestep)
         # Check max timesteps
-        truncated = self.terminated_or_not(timestep)
+        terminated = self.terminated_or_not(timestep)
         if verbose:
             print("step reward:", torch.tensor(self.step_reward))
-        return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), torch.tensor(self.step_reward), torch.tensor(terminated), torch.tensor(truncated)
+        if last_possession != [0, 0]:
+            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, self.goal_pos]), torch.tensor(self.step_reward), torch.tensor(terminated), torch.tensor(truncated)
+        else:
+            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, ball_position]), torch.tensor(self.step_reward), torch.tensor(terminated), torch.tensor(truncated)
 
     def terminated_or_not(self, timestep):
         if timestep >= self.max_steps:
@@ -294,11 +303,11 @@ class simple_env(gym.Env):
             terminated = True
             self.step_reward[0] += 1
             self.step_reward[1] -= 1
-            # print("An Agent Scored!")
+            print("An Agent Scored!")
 
         # If ball is out of goal line
         elif ball_position[0] < self.field_bounds_x or ball_position[0] > self.field_bounds_x + field_width:
-            # terminated = True
+            terminated = True
             # Negative reward if you dribbled out:
             self.neg_reward_on_possession(last_possession, reward=.05)
             if reward_verbose:
@@ -306,7 +315,7 @@ class simple_env(gym.Env):
 
 
         elif ball_position[1] < self.field_bounds_y or ball_position[1] > self.field_bounds_y + field_height:
-            # terminated = True
+            terminated = True
             # Neg reward if dribbled out
             self.neg_reward_on_possession(last_possession, reward=.05)
             if reward_verbose:
@@ -362,9 +371,16 @@ class simple_env(gym.Env):
                 return [-0.1, 0.1]
 
     def out_of_bounds_reward(self, player_positions, player_velos):
-
+        terminated = True
+        counter = 0
         new_player_velos = [0 for _ in range(self.num_players * 2)]
         for i in range(self.num_players):
+            # add negative reward to discourage hitting the sides
+            if i <= self.num_players // 2:
+                self.step_reward[0] -= 0.1
+            else:
+                self.step_reward[1] -= 0.1
+
             if player_positions[i * 2] < self.field_bounds_x:
                 player_positions[i * 2] = self.field_bounds_x
             elif player_positions[i * 2] > self.field_width + self.field_bounds_x:
@@ -376,6 +392,7 @@ class simple_env(gym.Env):
                     self.step_reward[0] += 0.05
                 else:
                     self.step_reward[1] += 0.05
+                counter += 1
 
             if player_positions[(i * 2) + 1] < self.field_bounds_y:
                 player_positions[(i * 2) + 1] = self.field_bounds_y
@@ -388,14 +405,13 @@ class simple_env(gym.Env):
                     self.step_reward[0] += 0.05
                 else:
                     self.step_reward[1] += 0.05
+                counter += 1
+        if counter == 2:
+            terminated = False
 
-            # add negative reward to discourage hitting the sides
-            if i <= self.num_players // 2:
-                self.step_reward[0] -= 0.1
-            else:
-                self.step_reward[1] -= 0.1
-        return player_positions, new_player_velos
+        return player_positions, new_player_velos, terminated
     def get_ball(self, player_positions, ball_position, last_possession, ball_or_not):
+        terminated = False
         for i in ball_or_not:
             if i == 1:
                 return ball_or_not, last_possession
@@ -419,14 +435,17 @@ class simple_env(gym.Env):
                 new_ball_or_not[i] = 1  # find index of player inside of player_positions
                 if last_possession == [0, 0]:
                     if i <= self.num_players / 2:
-                        last_possession = [0, 1]
-                    else:
                         last_possession = [1, 0]
+                        self.step_reward[0] += 0.3
+                    else:
+                        self.step_reward[1] += 0.3
+                        last_possession = [0, 1]
                 else:
                     last_possession.reverse()
+                terminated = True
 
-                return new_ball_or_not, last_possession
-        return ball_or_not, last_possession
+                return new_ball_or_not, last_possession, terminated
+        return ball_or_not, last_possession, terminated
 
     def get_tackled(self, player_positions, player_actions, new_possession):
         # print("player positions:", player_positions)
@@ -681,6 +700,23 @@ class simple_env(gym.Env):
             print("obs 5 (last possession):", obs[3])
             print("obs 6 (ball pos):", obs[4])
             print("obs 7 (ball velo):", obs[5])
+            print("new list:", new_list)
+        new_lists = torch.tensor(self.flatten_list_of_lists(new_list))
+        if verbose:
+            print("returning obs:", new_lists)
+
+        return new_lists
+
+    def return_agent_obs(self, obs):
+        if verbose:
+            print("pre-returning obs:", obs)
+        new_list = [(self.flatten_list_of_lists(obs[0]))]
+        new_list.append(obs[1])
+
+        if verbose:
+            print("returning obs")
+            print("obs 0 (player pos):", obs[0])
+            print("obs 1 (ball pos):", obs[1])
             print("new list:", new_list)
         new_lists = torch.tensor(self.flatten_list_of_lists(new_list))
         if verbose:

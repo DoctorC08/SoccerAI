@@ -89,13 +89,13 @@ class DQN(nn.Module): # Add: Double + Dueling DQN
             print("n_obs and n_acts:", n_observations, n_actions)
         super(DQN, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(n_observations, 32),
+            nn.Linear(n_observations, 8),
             nn.Mish(),
-            nn.Linear(32, 32),
+            nn.Linear(8, 8),
             nn.Mish(),
-            nn.Linear(32, 32),
+            nn.Linear(8, 16),
             nn.Mish(),
-            nn.Linear(32, n_actions)
+            nn.Linear(16, n_actions)
         )
     def forward(self, x):
         # print(x)
@@ -104,7 +104,7 @@ class DQN(nn.Module): # Add: Double + Dueling DQN
     def non_random_action(self, state):
         return torch.argmax(self.model(state))
 class Agent:
-    def __init__(self, n_actions, n_observations, batch_size=25, mem_capacity=1_000, EPS_START=1, EPS_END=.1, EPS_DECAY=10_000, LR=1e-2, GAMMA=0.99):
+    def __init__(self, n_actions, n_observations, batch_size=100, mem_capacity=1_000, EPS_START=1, EPS_END=.1, EPS_DECAY=50_000, LR=1e-2, GAMMA=0.99):
         self.n_actions = n_actions
         self.BATCH_SIZE = batch_size * 10   # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = GAMMA                       # GAMMA is the discount factor as mentioned in the previous section
@@ -224,7 +224,6 @@ class Agent:
 
     def save_models(self, model_path):
         torch.save(self.policy_net, model_path + "_policy_net.pt")
-        torch.save(self.target_net, model_path + "_target_net.pt")
 
 
 

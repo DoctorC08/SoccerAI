@@ -95,10 +95,10 @@ def single_agent_testing(agent, env, render_mode):
 
     # print(f"Starting Training for {i_episode} Episode")
     # Initialize the environment and get it's obs
-    observation, _ = env.reset()
+    observation, agent_obs, _ = env.reset()
     # observation = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
     observation = observation.clone().detach().to(dtype=torch.float32).unsqueeze(0)
-
+    agent_obs = agent_obs.clone().detach().to(dtype=torch.float32).unsqueeze(0)
     for t in count():
         if verbose:
             print("observation:", observation, "len obs:", len(observation[0]))
@@ -106,7 +106,7 @@ def single_agent_testing(agent, env, render_mode):
         # Get actions from agents
         observation = observation.squeeze(0)
 
-        action = agent.non_random_action(observation)
+        action = agent.non_random_action(agent_obs)
 
         if verbose:
             print("action1:", action)
@@ -120,7 +120,7 @@ def single_agent_testing(agent, env, render_mode):
             print("new action1:", new_action)
 
         # Lower obs space for step function
-        observation, reward, terminated, truncated = env.step(observation, [new_action], t, render_mode)
+        observation, agent_obs, reward, terminated, truncated = env.step(observation, [new_action], t, render_mode)
         done = terminated or truncated
         rewards0.append(reward[0])
         rewards1.append(reward[1])
@@ -221,16 +221,16 @@ LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
 
 from SimplifiedEnviornment import simple_env
 
-env = simple_env()
-# Reset env and get obs length
-state, n_obs = env.reset()
-
-# matchups(agents, 1, env, render_mode=True)
-# LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
-LRs = [1e-4]
-versions = 1
+# env = simple_env()
+# # Reset env and get obs length
+# state, agent_obs, n_obs = env.reset()
+#
+# # matchups(agents, 1, env, render_mode=True)
+# # LRs = [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 5e-3, 5e-4, 5e-5]
+# LRs = [1e-4]
+# versions = 1
 # for lr in LRs:
 #     for i in range(versions):
 #         path = f"/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_{i}.9.0_LR_5e-05_agent_policy_net.pt"
-#         path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_1.17.0_1_LR_0.01_agent_policy_net.pt"
-#         single_player_testing2(path, times_tested_per_matchup=1, render_mode=True)
+#         path = "/Users/christophermao/Desktop/RLModels/Grid Search Models/single_agent_0.9.6_0_e_greedy_end_0.5_agent_target_net.pt"
+#         single_player_testing2(path, times_tested_per_matchup=10, render_mode=True)

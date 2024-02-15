@@ -251,9 +251,9 @@ class simple_env(gym.Env):
         if verbose:
             print("step reward:", torch.tensor(self.step_reward))
         if last_possession != [0, 0]:
-            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, self.goal_pos]), torch.tensor(self.step_reward), torch.tensor(terminated), torch.tensor(truncated)
+            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, self.goal_pos]), torch.tensor(self.step_reward[0]), terminated, truncated
         else:
-            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, ball_position]), torch.tensor(self.step_reward), torch.tensor(terminated), torch.tensor(truncated)
+            return self.return_obs([player_positions, player_velos, ball_or_not, last_possession, ball_position, ball_velo]), self.return_agent_obs([player_positions, ball_position]), torch.tensor(self.step_reward[0]), terminated, truncated
 
     def terminated_or_not(self, timestep):
         if timestep >= self.max_steps:
@@ -527,7 +527,6 @@ class simple_env(gym.Env):
         # Find the angle based on the input index
         if verbose:
             print("player action", player_action)
-
         angle = self.pos_angles_in_radians[player_action]
 
         if verbose:

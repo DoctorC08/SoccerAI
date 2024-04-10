@@ -12,6 +12,7 @@ verbose = False
 class GridSoccer(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array'], "video.frames_per_second":10}
     def __init__(self, render_mode=None, size=5):
+        self.timestep = 0 # timesteps
         self.size = size # Size of grid
         self.window_size = 512 # PyGame window size
 
@@ -57,6 +58,10 @@ class GridSoccer(gym.Env):
         # Set agent location
         self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
 
+        self.truncated = False
+        self.timestep = 0
+        self.reward = 0
+
         self._target_location = self._agent_location
         while np.array_equal(self._target_location, self._agent_location):
             self._target_location = self.np_random.integers(
@@ -72,6 +77,7 @@ class GridSoccer(gym.Env):
         return observation, info
 
     def step(self, action):
+        self.timestep += 1
         if verbose:
             print("action:", action)
         action = int(action)
@@ -83,15 +89,21 @@ class GridSoccer(gym.Env):
         )
 
         terminated = np.array_equal(self._agent_location, self._target_location)
-        reward = 1 if terminated else 0
+        if terminated:
+            self.reward = 1 - (self.timestep / 500)
+        # reward = 1 if terminated else 0
         observation = self._get_obs()
         info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
 
-        # Extra false is truncated
-        return observation, reward, terminated, False, info
+        if self.timestep > 200:
+            self.reward = -1
+            self.truncated = True
+        # print(self.timestep, self.reward, terminated, self.truncated, self._agent_location, self._target_location)
+
+        return observation, self.reward, terminated, self.truncated, info
 
     def render(self):
         if self.render_mode == "rgb_array":

@@ -12,20 +12,21 @@ from Graphs import Graph
 global verbose
 verbose = False
 
-rew_graph = Graph
+rew_graph = Graph(["Reward Graph", "Timesteps", "Reward"])
 env = GridSoccer()
 # print(GridSoccer.observation_space, GridSoccer.action_space)
 agent = Agent(4, 4)
 
 
-num_episodes = 100
+num_episodes = 1000
+count = 0
 for episode in tqdm(range(num_episodes)):
     state, _ = env.reset()
-
-    count = 0
+    # print(episode)
     while True:
         count += 1
         if verbose:
+            print(count)
             print("state:", state)
         action = agent.select_action(state)
         obs, reward, terminated, truncated, _ = env.step(action)
@@ -50,7 +51,13 @@ for episode in tqdm(range(num_episodes)):
             target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (1 - agent.TAU)
         agent.target_net.load_state_dict(target_net_state_dict)
 
-        node = (count, reward)
-        rew_graph.add_node(node)
 
+
+        if done:
+            node = (count, reward)
+            rew_graph.add_node(node)
+            break
+
+print("Building Rew graph")
 rew_graph.display()
+print("Finished building Rew graph")

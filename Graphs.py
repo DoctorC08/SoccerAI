@@ -20,22 +20,21 @@ class Graph:
 
         # Create nodes
         for node in self._nodes:
-            plt.plot(node[0], node[1], marker="o", color="blue", label=node)
+            plt.plot(node[0], node[1], marker="o", color="blue", label=None)
 
 
         # Customize the plot
         plt.title(self.label[0])
         plt.xlabel(self.label[1])
         plt.ylabel(self.label[2])
-        plt.legend(loc="upper left")
         plt.grid(True)
         plt.axis("off")  # Remove axis if nodes have specific positions
 
         plt.show()
 
 
-# # Example usage
-# graph = Graph()
+# Example usage
+# graph = Graph(["title", "x axis", "y axis"])
 #
 # graph.add_node((1, 2))  # You can add nodes with coordinates for positioning
 # graph.add_node((3, 4))

@@ -80,7 +80,7 @@ class Agent:
     def __init__(self, n_actions, n_observations):
         self.n_actions = n_actions
         self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 50 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.BATCH_SIZE = 100 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = 0.5                    # EPS_START is the starting value of epsilon
         self.EPS_END = 0.05                     # EPS_END is the final value of epsilon

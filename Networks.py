@@ -77,16 +77,17 @@ class DQN(nn.Module):
         #     return self.model(input)
 
 class Agent:
-    def __init__(self, n_actions, n_observations):
+    def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6):
+        self.loss = 1
         self.n_actions = n_actions
         self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
         self.BATCH_SIZE = 100 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
-        self.EPS_START = 0.5                    # EPS_START is the starting value of epsilon
-        self.EPS_END = 0.05                     # EPS_END is the final value of epsilon
-        self.EPS_DECAY = 500                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
+        self.EPS_START = eps_start                    # EPS_START is the starting value of epsilon
+        self.EPS_END = eps_end                     # EPS_END is the final value of epsilon
+        self.EPS_DECAY = eps_decay                 # EPS_DECAY controls the rate of exponential decay of epsilon, higher means a slower decay
         self.TAU = 0.005                        # TAU is the update rate of the target network
-        self.LR = 1e-6                          # LR is the learning rate of the ``AdamW`` optimizer
+        self.LR = lr                          # LR is the learning rate of the ``AdamW`` optimizer
 
         self.episode_durations = []
 
@@ -101,6 +102,11 @@ class Agent:
         self.memory = ReplayMemory(10000)
 
         self.steps_done = 0
+
+    def get_eps(self):
+        eps = self.EPS_END + (self.EPS_START - self.EPS_END) * \
+            math.exp(-1. * self.steps_done / self.EPS_DECAY)
+        return eps
 
     def select_action(self, state):
         sample = random.random()
@@ -192,6 +198,7 @@ class Agent:
         # Compute Huber loss
         criterion = nn.SmoothL1Loss()
         loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
+        self.loss = loss
 
         # Optimize the model
         self.optimizer.zero_grad()

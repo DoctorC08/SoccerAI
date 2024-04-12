@@ -15,6 +15,7 @@ class GridSoccer(gym.Env):
         self.timestep = 0 # timesteps
         self.size = size # Size of grid
         self.window_size = 512 # PyGame window size
+        self.max_timesteps = 50
 
         # self.observation_space = spaces.Dict(
         #     {
@@ -46,11 +47,8 @@ class GridSoccer(gym.Env):
         return np.concatenate((self._agent_location, self._target_location))
 
     def _get_info(self): # return manhattan distance
-        return {
-            "distance": np.linalg.norm(
-                self._agent_location - self._target_location, ord=1
-            )
-        }
+        return np.linalg.norm(self._agent_location - self._target_location, ord=1)
+
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -89,8 +87,7 @@ class GridSoccer(gym.Env):
         )
 
         terminated = np.array_equal(self._agent_location, self._target_location)
-        if terminated:
-            self.reward = 1 - (self.timestep / 500)
+
         # reward = 1 if terminated else 0
         observation = self._get_obs()
         info = self._get_info()
@@ -98,7 +95,10 @@ class GridSoccer(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        if self.timestep > 200:
+
+        if terminated:
+            self.reward = 1 - ((self.timestep / self.max_timesteps) / 10)
+        elif self.timestep > self.max_timesteps:
             self.reward = -1
             self.truncated = True
         # print(self.timestep, self.reward, terminated, self.truncated, self._agent_location, self._target_location)

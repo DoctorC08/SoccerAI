@@ -1,0 +1,5 @@
+  0%|          | 0/1000 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/Users/christophermao/Documents/GitHub/SoccerAI/envs/test.py", line 76, in <module>
+    loss.append(agent.loss)
+AttributeError: 'Agent' object has no attribute 'loss'

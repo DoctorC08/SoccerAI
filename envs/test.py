@@ -1,14 +1,14 @@
 # test.py
 # by christophermao
 # 4/4/24
-import gym
 import torch
+import time
 from tqdm import tqdm
+import wandb
 
 from Enviornment import GridSoccer
 from Networks import Agent
 from Graphs import Graph
-import time
 
 global verbose
 verbose = False
@@ -16,20 +16,48 @@ verbose = False
 global Mtime
 Mtime = False
 
-rew_graph = Graph(["Reward Graph", "Timesteps", "Reward"])
+rew_graph = Graph(["Total Reward Graph", "Timesteps", "Reward"])
+rew_graph2 = Graph(["Final Reward Graph", "Timesteps", "Reward"])
+
 env = GridSoccer()
 # print(GridSoccer.observation_space, GridSoccer.action_space)
-agent = Agent(4, 4)
 
+# init wandb
+wandb.login()
+Eps_start = 0.5
+Eps_end = 0.05
+Eps_decay = 10_000
+num_episodes = 10000
+lr=0.001
 
-num_episodes = 1000
+agent = Agent(4, 4, eps_start=Eps_start, eps_end=Eps_end, eps_decay=Eps_decay, lr=lr)
+
+run = wandb.init(
+    # Set the project where this run will be logged
+    project="SoccerAI",
+    # Track hyperparameters and run metadata
+    config={
+        "Eps_start": Eps_start,
+        "Eps_end": Eps_end,
+        "Eps_decay": Eps_decay,
+        "episodes": num_episodes,
+        "lr": lr,
+    },
+    # mode="disabled",
+)
+
 count = 0
+
 for episode in tqdm(range(num_episodes)):
     state, _ = env.reset()
     # print(episode)
-    while True:
-        time1 = time.time()
+    total_reward = []
+    loss = []
+    len_episode = 0
 
+    while True:
+        len_episode += 1
+        time1 = time.time()
         count += 1
         if verbose:
             print(count)
@@ -38,8 +66,6 @@ for episode in tqdm(range(num_episodes)):
         obs, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
         next_state = obs
-
-
 
         if verbose:
             print("memory push values")
@@ -54,6 +80,7 @@ for episode in tqdm(range(num_episodes)):
         time2 = time.time()
 
         agent.optimize_model()
+        loss.append(agent.loss)
 
         time3 = time.time()
 
@@ -69,12 +96,20 @@ for episode in tqdm(range(num_episodes)):
             print("Time for select action + env step", time2-time1)
             print("Time for pushing to memory + optimize model", time3-time2)
             print("Time for copying weights to target net", time4-time3)
-
+        total_reward.append(reward)
         if done:
-            node = (count, reward)
-            rew_graph.add_node(node)
+            # node = (count, sum(total_reward))
+            # rew_graph.add_node(node)
+            # node = (count, reward)
+            # rew_graph2.add_node(node)
             break
 
-print("Building Rew graph")
-rew_graph.display()
-print("Finished building Rew graph")
+    wandb.log({
+        "len_episodes:": len_episode,
+        "total_reward": sum(total_reward),
+        "average_reward": sum(total_reward) / len_episode,
+        "sum_loss": sum(loss),
+        "average_loss": sum(loss) / len(loss),
+        "eps": agent.get_eps(),
+    })
+

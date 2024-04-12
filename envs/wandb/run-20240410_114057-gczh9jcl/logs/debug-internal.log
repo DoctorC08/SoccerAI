@@ -1,0 +1,505 @@
+2024-04-10 11:40:57,273 INFO    StreamThr :33913 [internal.py:wandb_internal():86] W&B internal server running at pid: 33913, started at: 2024-04-10 11:40:57.270926
+2024-04-10 11:40:57,292 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status
+2024-04-10 11:40:57,306 INFO    WriterThread:33913 [datastore.py:open_for_write():87] open: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/run-gczh9jcl.wandb
+2024-04-10 11:40:57,310 DEBUG   SenderThread:33913 [sender.py:send():379] send: header
+2024-04-10 11:40:57,310 DEBUG   SenderThread:33913 [sender.py:send():379] send: run
+2024-04-10 11:40:57,766 INFO    SenderThread:33913 [dir_watcher.py:__init__():211] watching files in: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files
+2024-04-10 11:40:57,766 INFO    SenderThread:33913 [sender.py:_start_run_threads():1124] run started: gczh9jcl with start time 1712774457.267974
+2024-04-10 11:40:57,775 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: check_version
+2024-04-10 11:40:57,775 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: check_version
+2024-04-10 11:40:57,891 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: run_start
+2024-04-10 11:40:57,898 DEBUG   HandlerThread:33913 [system_info.py:__init__():26] System info init
+2024-04-10 11:40:57,898 DEBUG   HandlerThread:33913 [system_info.py:__init__():41] System info init done
+2024-04-10 11:40:57,898 INFO    HandlerThread:33913 [system_monitor.py:start():194] Starting system monitor
+2024-04-10 11:40:57,898 INFO    SystemMonitor:33913 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-04-10 11:40:57,898 INFO    HandlerThread:33913 [system_monitor.py:probe():214] Collecting system info
+2024-04-10 11:40:57,900 INFO    SystemMonitor:33913 [interfaces.py:start():190] Started cpu monitoring
+2024-04-10 11:40:57,900 DEBUG   HandlerThread:33913 [system_info.py:probe():150] Probing system
+2024-04-10 11:40:57,900 INFO    SystemMonitor:33913 [interfaces.py:start():190] Started disk monitoring
+2024-04-10 11:40:57,900 DEBUG   HandlerThread:33913 [system_info.py:probe():198] Probing system done
+2024-04-10 11:40:57,901 DEBUG   HandlerThread:33913 [system_monitor.py:probe():223] {'os': 'macOS-14.0-arm64-arm-64bit', 'python': '3.10.6', 'heartbeatAt': '2024-04-10T18:40:57.900576', 'startedAt': '2024-04-10T18:40:57.219404', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/test.py', 'codePathLocal': 'test.py', 'codePath': 'test.py', 'host': 'ChristorMao2026.bad', 'username': 'christophermao', 'executable': '/Users/christophermao/PycharmProjects/SoccerAI/bin/python', 'cpu_count': 8, 'cpu_count_logical': 8, 'cpu_freq': {'current': 3204, 'min': 600, 'max': 3204}, 'cpu_freq_per_core': [{'current': 3204, 'min': 600, 'max': 3204}], 'disk': {'/': {'total': 228.27386474609375, 'used': 12.909774780273438}}, 'gpuapple': {'type': 'arm', 'vendor': 'Apple'}, 'memory': {'total': 8.0}}
+2024-04-10 11:40:57,901 INFO    HandlerThread:33913 [system_monitor.py:probe():224] Finished collecting system info
+2024-04-10 11:40:57,901 INFO    HandlerThread:33913 [system_monitor.py:probe():227] Publishing system info
+2024-04-10 11:40:57,902 INFO    SystemMonitor:33913 [interfaces.py:start():190] Started gpuapple monitoring
+2024-04-10 11:40:57,906 INFO    SystemMonitor:33913 [interfaces.py:start():190] Started memory monitoring
+2024-04-10 11:40:57,907 INFO    HandlerThread:33913 [system_monitor.py:probe():229] Finished publishing system info
+2024-04-10 11:40:57,907 INFO    SystemMonitor:33913 [interfaces.py:start():190] Started network monitoring
+2024-04-10 11:40:57,911 DEBUG   SenderThread:33913 [sender.py:send():379] send: files
+2024-04-10 11:40:57,911 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-metadata.json with policy now
+2024-04-10 11:40:58,001 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: python_packages
+2024-04-10 11:40:58,001 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-10 11:40:58,002 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: python_packages
+2024-04-10 11:40:58,002 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: stop_status
+2024-04-10 11:40:58,004 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-10 11:40:58,028 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:58,063 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:58,211 DEBUG   SenderThread:33913 [sender.py:send():379] send: telemetry
+2024-04-10 11:40:58,212 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:58,213 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:58,213 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:58,213 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:58,213 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:58,214 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:58,310 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:58,312 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:58,313 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:58,313 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:58,353 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:58,355 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:58,355 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:58,356 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:58,397 INFO    wandb-upload_0:33913 [upload_job.py:push():131] Uploaded file /var/folders/53/_089bh8j7n52246yy9ybzt8w0000gn/T/tmpjt7jy82xwandb/fwkr4s7g-wandb-metadata.json
+2024-04-10 11:40:58,773 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:40:58,773 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/requirements.txt
+2024-04-10 11:40:58,773 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-metadata.json
+2024-04-10 11:40:58,773 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:40:59,081 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:59,082 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:59,082 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:59,083 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:59,468 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:59,469 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:59,469 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:59,470 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:59,507 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:59,508 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:59,508 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:59,508 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:59,656 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:59,669 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:59,676 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:59,690 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:59,707 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:40:59,708 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:40:59,708 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:40:59,708 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:40:59,774 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:00,092 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:00,093 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:00,093 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:00,094 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:00,714 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:00,715 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:00,715 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:00,716 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:00,779 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:00,779 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:01,562 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:01,564 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:01,564 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:01,624 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:01,868 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:02,361 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:02,361 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:02,362 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:02,362 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:02,362 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:02,678 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:02,679 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:02,679 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:02,679 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:02,871 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:02,871 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:02,969 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:02,970 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:02,970 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:02,970 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:03,627 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:03,628 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:03,628 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:03,629 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:03,872 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:04,265 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:04,267 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:04,267 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:04,267 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:04,875 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:04,875 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:05,019 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:05,021 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:05,021 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:05,022 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:05,701 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:05,702 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:05,702 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:05,702 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:05,880 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:06,384 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:06,387 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:06,387 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:06,388 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:06,882 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:06,882 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:07,391 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:07,450 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:07,454 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:07,454 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:07,456 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:07,882 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:08,262 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:08,262 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:08,263 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:08,263 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:08,890 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:08,891 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:09,278 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:09,281 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:09,282 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:09,283 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:09,607 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:09,609 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:09,609 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:09,610 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:09,898 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:10,905 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:12,625 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:12,659 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:12,668 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:12,669 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:12,677 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:13,065 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:13,083 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-10 11:41:13,116 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-10 11:41:13,118 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: stop_status
+2024-04-10 11:41:15,063 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:15,437 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:15,473 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:15,474 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:15,517 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:16,194 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:17,196 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:17,568 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:17,607 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:17,615 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:17,616 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:18,027 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:18,028 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:18,028 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:18,028 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:18,029 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:18,201 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:19,203 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:19,245 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:19,246 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:19,246 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:19,247 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:20,206 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:20,264 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:20,266 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:20,266 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:20,267 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:20,933 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:20,934 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:20,934 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:20,935 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:21,211 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:21,211 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:21,571 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:21,572 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:21,572 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:21,572 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:22,204 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:22,205 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:22,205 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:22,205 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:22,216 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:22,344 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:22,345 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:22,346 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:22,346 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:22,724 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:22,726 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:22,726 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:22,726 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:22,737 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:22,738 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:22,738 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:22,738 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:22,763 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:22,764 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:22,764 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:22,765 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:23,222 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:23,222 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:23,399 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:23,400 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:23,400 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:23,400 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:23,400 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:24,029 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:24,030 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:24,031 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:24,031 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:24,178 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:24,179 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:24,179 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:24,179 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:24,227 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:24,819 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:24,820 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:24,821 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:24,821 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:25,229 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:25,230 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:25,329 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:25,331 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:25,331 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:25,331 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:25,506 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:25,507 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:25,507 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:25,507 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:26,226 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:26,227 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:26,227 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:26,228 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:26,235 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:26,862 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:26,863 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:26,863 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:26,863 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:27,240 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:27,240 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:27,493 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:27,494 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:27,494 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:27,495 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:28,037 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-10 11:41:28,039 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-10 11:41:28,040 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: stop_status
+2024-04-10 11:41:28,217 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:28,218 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:28,218 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:28,218 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:28,240 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:28,917 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:28,918 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:28,922 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:29,041 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:29,041 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:29,246 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:29,246 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/config.yaml
+2024-04-10 11:41:29,246 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:29,558 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:29,559 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:29,559 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:29,560 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:29,742 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:29,743 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:29,743 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:29,743 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:30,252 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:30,414 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:30,415 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:30,416 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:30,416 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:30,884 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:30,886 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:30,887 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:30,888 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:31,260 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:31,261 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:31,739 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:31,740 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:31,741 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:31,741 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:32,261 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:32,391 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:32,392 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:32,392 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:32,392 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:33,046 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:33,047 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:33,047 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:33,048 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:33,267 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:33,268 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:33,822 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:33,823 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:33,824 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:33,824 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:34,268 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:34,543 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:34,544 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:34,544 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:34,545 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:34,545 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:35,199 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:35,200 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:35,200 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:35,200 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:35,270 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:35,270 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:35,936 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:35,937 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:35,937 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:35,938 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:35,950 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:35,950 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:35,950 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:35,951 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:35,988 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:35,989 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:35,990 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:35,990 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:36,275 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:36,616 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:36,618 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:36,618 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:36,618 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:37,281 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:37,281 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:37,295 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:37,296 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:37,296 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:37,297 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:37,927 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:37,928 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:37,928 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:37,928 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:37,940 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:37,941 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:37,941 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:37,941 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:38,281 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:38,570 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:38,571 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:38,571 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:38,571 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:38,984 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:38,986 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:38,986 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:38,986 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:39,282 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:39,283 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:39,358 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:39,359 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:39,359 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:39,359 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:39,992 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:39,993 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:39,993 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:39,993 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:39,994 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:40,144 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:40,145 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:40,145 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:40,146 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:40,288 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:40,785 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:40,786 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:40,786 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:40,786 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:41,289 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:41,289 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:41,426 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:41,427 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:41,427 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:41,428 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:42,076 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:42,077 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:42,077 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:42,079 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:42,216 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:42,217 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:42,217 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:42,218 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:42,291 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:42,852 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:42,853 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:42,853 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:42,853 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:43,043 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-10 11:41:43,043 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-10 11:41:43,044 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: stop_status
+2024-04-10 11:41:43,297 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:43,297 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:43,560 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:43,561 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:43,561 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:43,561 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:44,088 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:44,089 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:44,089 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:44,090 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:44,302 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:44,516 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:44,518 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:44,518 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:44,518 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:45,168 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:45,169 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:45,170 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:45,170 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:45,170 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:45,285 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:45,286 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:45,286 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:45,287 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:45,304 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:45,304 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:45,959 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:45,961 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:45,961 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:45,961 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:46,312 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:46,869 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:46,871 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:46,871 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:46,925 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:47,314 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:47,314 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:47,528 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:47,529 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:47,529 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:47,530 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:47,592 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:47,592 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:47,592 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:47,593 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:48,221 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:48,222 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:48,222 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:48,223 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:48,315 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:48,855 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:48,857 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:48,857 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:48,857 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:49,321 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:49,321 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:49,606 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-10 11:41:49,608 DEBUG   SenderThread:33913 [sender.py:send():379] send: history
+2024-04-10 11:41:49,608 DEBUG   SenderThread:33913 [sender.py:send_request():406] send_request: summary_record
+2024-04-10 11:41:49,609 INFO    SenderThread:33913 [sender.py:_save_file():1390] saving file wandb-summary.json with policy end
+2024-04-10 11:41:49,796 ERROR   gpuapple  :33913 [gpu_apple.py:sample():81] GPU stats error: Command '['/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/wandb/bin/apple_gpu_stats', '--json']' died with <Signals.SIGINT: 2>.
+Traceback (most recent call last):
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/wandb/sdk/internal/system/assets/gpu_apple.py", line 60, in sample
+    subprocess.check_output(command, universal_newlines=True)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 420, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/subprocess.py", line 524, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/wandb/bin/apple_gpu_stats', '--json']' died with <Signals.SIGINT: 2>.
+2024-04-10 11:41:50,323 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/wandb-summary.json
+2024-04-10 11:41:50,822 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:51,328 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/output.log
+2024-04-10 11:41:55,839 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:41:57,909 DEBUG   SystemMonitor:33913 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-04-10 11:41:57,911 DEBUG   SenderThread:33913 [sender.py:send():379] send: telemetry
+2024-04-10 11:41:57,911 DEBUG   SenderThread:33913 [sender.py:send():379] send: stats
+2024-04-10 11:42:00,930 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:01,383 INFO    Thread-12 :33913 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240410_114057-gczh9jcl/files/config.yaml
+2024-04-10 11:42:06,072 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:11,090 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:16,115 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:21,132 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:26,149 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:27,919 DEBUG   SenderThread:33913 [sender.py:send():379] send: stats
+2024-04-10 11:42:28,029 ERROR   FileStreamThread:33913 [file_stream.py:_handle_response():523] dropped chunk 404 Client Error: Not Found for url: https://api.wandb.ai/files/m_christopher/SoccerAI/gczh9jcl/file_stream
+NoneType: None
+2024-04-10 11:42:31,930 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:36,953 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:41,970 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:47,006 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report
+2024-04-10 11:42:52,029 DEBUG   HandlerThread:33913 [handler.py:handle_request():146] handle_request: status_report

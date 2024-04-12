@@ -207,6 +207,9 @@ class Agent:
         torch.nn.utils.clip_grad_value_(self.policy_net.parameters(), 100)
         self.optimizer.step()
 
+    def save_model(self, model_path):
+        torch.save(self.policy_net, model_path + "_policy_net.pt")
+
 
     def convert_list_of_tensors_to_tensor(self, tensor_list):
         list_of_tensors = [torch.tensor(item) for sublist in tensor_list for item in sublist]

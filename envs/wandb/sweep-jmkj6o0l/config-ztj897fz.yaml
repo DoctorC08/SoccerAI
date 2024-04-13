@@ -1,0 +1,12 @@
+wandb_version: 1
+
+Eps_decay:
+  value: 2755
+Eps_end:
+  value: 0.2589054749918318
+Eps_start:
+  value: 0.612304015071464
+Lr:
+  value: 0.045468173076279816
+episodes:
+  value: 3474

@@ -37,61 +37,13 @@ wandb.login()
 #     # mode="disabled",
 # )
 
-
-
-def main():
-    wandb.init(project="SoccerAI")
-    score = train(wandb.config)
-    wandb.log({"final": score})
-
-# 2: Define the search space
-sweep_configuration = {
-    "method": "bayes",
-    "metric": {
-        "goal": "maximize",
-        "name": "score"
-    },
-    "parameters": {
-        "Eps_decay": {
-            "distribution": "int_uniform",
-            "max": 20000,
-            "min": 1000
-        },
-        "Eps_start": {
-            "distribution": "uniform",
-            "max": 0.99,
-            "min": 0.25,
-        },
-        "Eps_end": {
-            "distribution": "uniform",
-            "max": 0.5,
-            "min": 0.025,
-        },
-        "Lr": {
-            "distribution": "uniform",
-            "max": 0.1,
-            "min": 1e-05,
-        },
-        "episodes": {
-            "distribution": "int_uniform",
-            "max": 4000,
-            "min": 1000,
-        },
-    },
-}
-
-# 3: Start the sweep
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="SoccerAI")
-
-wandb.agent(sweep_id, function=main, count=10)
-
 def train(config):
     env = GridSoccer()
 
     Eps_start = config.Eps_start
     Eps_end = config.Eps_end
     Eps_decay = config.Eps_decay
-    num_episodes = config.num_episodes
+    num_episodes = config.episodes
     lr = config.Lr
     name = f"GS-DQN-1.0"
     model_path = f"/Users/christophermao/Desktop/RLModels/{name}"
@@ -171,3 +123,53 @@ def train(config):
 
     # average total rew of past 100 eps
     return sum(final_rews[-101:-1]) / 100
+
+
+
+
+# 2: Define the search space
+sweep_configuration = {
+    "method": "bayes",
+    "metric": {
+        "goal": "maximize",
+        "name": "score"
+    },
+    "parameters": {
+        "Eps_decay": {
+            "distribution": "int_uniform",
+            "max": 20000,
+            "min": 1000
+        },
+        "Eps_start": {
+            "distribution": "uniform",
+            "max": 0.99,
+            "min": 0.25,
+        },
+        "Eps_end": {
+            "distribution": "uniform",
+            "max": 0.5,
+            "min": 0.025,
+        },
+        "Lr": {
+            "distribution": "uniform",
+            "max": 0.1,
+            "min": 1e-05,
+        },
+        "episodes": {
+            "distribution": "int_uniform",
+            "max": 4000,
+            "min": 1000,
+        },
+    },
+}
+
+def main():
+    wandb.init(project="SoccerAI")
+    score = train(wandb.config)
+    wandb.log({"final": score})
+
+
+# 3: Start the sweep
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="SoccerAI")
+
+wandb.agent(sweep_id, function=main, count=10)

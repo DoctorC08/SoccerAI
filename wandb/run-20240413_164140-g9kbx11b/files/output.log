@@ -1,0 +1,32 @@
+  0%|          | 1/10000 [00:00<50:30,  3.30it/s]/Users/christophermao/Documents/GitHub/SoccerAI/Networks.py:69: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  return self.model(torch.tensor(x, dtype=torch.float32))
+
+  0%|          | 9/10000 [00:04<1:27:39,  1.90it/s]
+Traceback (most recent call last):
+  File "/Users/christophermao/Documents/GitHub/SoccerAI/Networks.py", line 67, in forward
+    return self.model(x)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/container.py", line 215, in forward
+    input = module(input)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: mat1 and mat2 must have the same dtype, but got Long and Float
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/Users/christophermao/Documents/GitHub/SoccerAI/main.py", line 88, in <module>
+    agent.optimize_model()
+  File "/Users/christophermao/Documents/GitHub/SoccerAI/Networks.py", line 167, in optimize_model
+    state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/Users/christophermao/PycharmProjects/SoccerAI/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/Users/christophermao/Documents/GitHub/SoccerAI/Networks.py", line 67, in forward
+    return self.model(x)

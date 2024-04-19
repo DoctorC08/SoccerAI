@@ -1,14 +1,17 @@
+# loading_agent_visual.py
+# by christophermao
+# 4/16/24
+
 # test.py
 # by christophermao
 # 4/4/24
 import torch
 import time
 from tqdm import tqdm
-import wandb
 
 from envs.Enviornment import GridSoccer
-from Networks import Agent
 from Graphs import Graph
+from Networks import pt_agent
 
 global verbose
 verbose = False
@@ -22,43 +25,22 @@ rew_graph2 = Graph(["Final Reward Graph", "Timesteps", "Reward"])
 env = GridSoccer(render_mode='human')
 # print(GridSoccer.observation_space, GridSoccer.action_space)
 
-# init wandb
-wandb.login()
 Eps_start = 0.5
 Eps_end = 0.05
 Eps_decay = 10_000
-num_episodes = 100
+num_episodes = 10
 lr=0.01
-name = f"DQN-1.0"
-model_path = f"/Users/christophermao/Desktop/RLModels/{name}"
+model_path = f"/Users/christophermao/Desktop/RLModels/GS-DQN-1.0_policy_net.pt"
 
 
-agent = Agent(4, 4, eps_start=Eps_start, eps_end=Eps_end, eps_decay=Eps_decay, lr=lr)
-
-
-run = wandb.init(
-    # Set the project where this run will be logged
-    project="SoccerAI",
-    # Track hyperparameters and run metadata
-    config={
-        "Eps_start": Eps_start,
-        "Eps_end": Eps_end,
-        "Eps_decay": Eps_decay,
-        "episodes": num_episodes,
-        "lr": lr,
-        "name": name,
-    },
-    monitor_gym=True,
-    mode="disabled",
-)
+dqn = torch.load(model_path)
+agent = pt_agent(dqn)
 
 count = 0
 
 for episode in tqdm(range(num_episodes)):
     state, _ = env.reset()
-    # print(episode)
     total_reward = []
-    loss = []
     len_episode = 0
 
     while True:
@@ -80,21 +62,10 @@ for episode in tqdm(range(num_episodes)):
             print(reward)
             print(next_state)
             print(done)
-        agent.memory.push(torch.tensor(state), action, torch.tensor(next_state), reward)
-        state = next_state
 
         time2 = time.time()
 
-        agent.optimize_model()
-        loss.append(agent.loss)
-
         time3 = time.time()
-
-        target_net_state_dict = agent.target_net.state_dict()
-        policy_net_state_dict = agent.policy_net.state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (1 - agent.TAU)
-        agent.target_net.load_state_dict(target_net_state_dict)
 
         time4 = time.time()
 
@@ -108,15 +79,9 @@ for episode in tqdm(range(num_episodes)):
             # rew_graph.add_node(node)
             # node = (count, reward)
             # rew_graph2.add_node(node)
+            print("Episode finished")
+            print("Total reward:", sum(total_reward))
+            print("Len of episode:", len_episode)
             break
 
-    wandb.log({
-        "len_episodes:": len_episode,
-        "total_reward": sum(total_reward),
-        "average_reward": sum(total_reward) / len_episode,
-        "sum_loss": sum(loss),
-        "average_loss": sum(loss) / len(loss),
-        "eps": agent.get_eps(),
-    })
 
-agent.save_model(model_path)

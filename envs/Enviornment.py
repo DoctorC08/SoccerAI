@@ -10,19 +10,16 @@ global verbose
 verbose = False
 
 class GridSoccer(gym.Env):
-    metadata = {'render.modes': ['human', 'rgb_array'], "video.frames_per_second":10}
-    def __init__(self, render_mode=None, size=5):
+    def __init__(self, render_mode=None, size=10):
+        self.render_mode = render_mode
+
         self.timestep = 0 # timesteps
         self.size = size # Size of grid
         self.window_size = 512 # PyGame window size
         self.max_timesteps = 50
 
-        # self.observation_space = spaces.Dict(
-        #     {
-        #         "agent": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-        #         "target": spaces.Box(0, size - 1, shape=(2,), dtype=int),
-        #     }
-        # )
+        self.goal_loc = np.array([size - 1, size // 2])
+
         self.observation_space = spaces.Box(low=0, high=size - 1, shape=(4,), dtype=int)
 
         # (0) Up (1) Down (2) Left (3) Right
@@ -36,32 +33,37 @@ class GridSoccer(gym.Env):
             3: np.array([1, 0]),
         }
 
-        # double check render_mode None or in metadata
-        assert render_mode is None or render_mode in self.metadata['render_modes']
+
 
         # if human mode (Viewing) is used then window and clock will be needed
         self.window = None
         self.clock = None
 
     def _get_obs(self):
-        return np.concatenate((self._agent_location, self._target_location))
+        if self.has_ball == 0:
+            return np.concatenate((self._agent_location, self._target_location))
+        else:
+            return np.append(self._agent_location, self.goal_loc)
 
     def _get_info(self): # return manhattan distance
         return np.linalg.norm(self._agent_location - self._target_location, ord=1)
-
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
         # Set agent location
-        self._agent_location = self.np_random.integers(0, self.size, size=2, dtype=int)
+        self._agent_location = np.array([0, self.size // 2])
 
         self.truncated = False
         self.timestep = 0
         self.reward = 0
 
+        self.has_ball = 0
+        self.first_time = 0
+
         self._target_location = self._agent_location
-        while np.array_equal(self._target_location, self._agent_location):
+        while (np.array_equal(self._target_location, self._agent_location)
+               or np.array_equal(self._target_location, self.goal_loc)):
             self._target_location = self.np_random.integers(
                 0, self.size, size=2, dtype=int
             )
@@ -76,8 +78,6 @@ class GridSoccer(gym.Env):
 
     def step(self, action):
         self.timestep += 1
-        if verbose:
-            print("action:", action)
         action = int(action)
         direction = self._action_to_direction[action]
 
@@ -86,18 +86,22 @@ class GridSoccer(gym.Env):
             self._agent_location + direction, 0, self.size - 1
         )
 
-        terminated = np.array_equal(self._agent_location, self._target_location)
+        terminated = np.array_equal(self._agent_location, self.goal_loc) and self.has_ball == 1
 
-        # reward = 1 if terminated else 0
         observation = self._get_obs()
         info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
-
-
+        self.reward = 0
         if terminated:
             self.reward = 1 - ((self.timestep / self.max_timesteps) / 10)
+        elif (np.array_equal(self._target_location, self._agent_location)
+              and self.first_time == 0):
+            self.first_time = 1
+            self.has_ball = 1
+            self.reward = 0.5 - ((self.timestep / self.max_timesteps) / 10)
+
         elif self.timestep > self.max_timesteps:
             self.reward = -1
             self.truncated = True
@@ -106,10 +110,15 @@ class GridSoccer(gym.Env):
         return observation, self.reward, terminated, self.truncated, info
 
     def render(self):
-        if self.render_mode == "rgb_array":
-            return self._render_frame()
+        # if self.render_mode == "rgb_array":
+        return self._render_frame()
 
     def _render_frame(self):
+
+        # if self.render_mode == "human":
+        #     print("render mode is human")
+        # else:
+        #     print("render mode is", self.render_mode)
         if self.window is None and self.render_mode == "human":
             pygame.init()
             pygame.display.init()
@@ -133,6 +142,15 @@ class GridSoccer(gym.Env):
                 pix_square_size * self._target_location,
                 (pix_square_size, pix_square_size),
             ),
+        )
+        # Then we draw the goal
+        pygame.draw.rect(
+            canvas,
+            (0, 255, 0),
+            pygame.Rect(
+                pix_square_size * self.goal_loc,
+                (pix_square_size, pix_square_size)
+            )
         )
         # Now we draw the agent
         pygame.draw.circle(
@@ -167,7 +185,7 @@ class GridSoccer(gym.Env):
 
             # We need to ensure that human-rendering occurs at the predefined framerate.
             # The following line will automatically add a delay to keep the framerate stable.
-            self.clock.tick(self.metadata["render_fps"])
+            self.clock.tick(10)
         else:  # rgb_array
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)

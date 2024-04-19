@@ -1,4 +1,4 @@
-# test.py
+# WandBSweeps.py
 # by christophermao
 # 4/4/24
 import torch
@@ -6,9 +6,8 @@ import time
 from tqdm import tqdm
 import wandb
 
-from Enviornment import GridSoccer
+from envs.Enviornment import GridSoccer
 from Networks import Agent
-from Graphs import Graph
 
 global verbose
 verbose = False
@@ -22,20 +21,6 @@ Mtime = False
 wandb.login()
 
 
-# run = wandb.init(
-#     # Set the project where this run will be logged
-#     project="SoccerAI",
-#     # Track hyperparameters and run metadata
-#     config={
-#         "Eps_start": Eps_start,
-#         "Eps_end": Eps_end,
-#         "Eps_decay": Eps_decay,
-#         "episodes": num_episodes,
-#         "lr": lr,
-#         "name": name,
-#     },
-#     # mode="disabled",
-# )
 
 def train(config):
     env = GridSoccer()
@@ -45,10 +30,15 @@ def train(config):
     Eps_decay = config.Eps_decay
     num_episodes = config.episodes
     lr = config.Lr
+    fc_layer_1 = config.fc_layer_1
+    fc_layer_2 = config.fc_layer_2
+    fc_layer_3 = config.fc_layer_3
+    mem_size = config.mem_size
     name = f"GS-DQN-1.0"
     model_path = f"/Users/christophermao/Desktop/RLModels/{name}"
 
-    agent = Agent(4, 4, eps_start=Eps_start, eps_end=Eps_end, eps_decay=Eps_decay, lr=lr)
+    agent = Agent(4, 4, eps_start=Eps_start, eps_end=Eps_end, eps_decay=Eps_decay,
+                  lr=lr, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3, mem_size=mem_size)
 
     count = 0
     final_rews = []
@@ -153,12 +143,32 @@ sweep_configuration = {
         "Lr": {
             "distribution": "uniform",
             "max": 0.1,
-            "min": 1e-05,
+            "min": 1e-07,
         },
         "episodes": {
             "distribution": "int_uniform",
             "max": 4000,
             "min": 1000,
+        },
+        "fc_layer_1": {
+            "distribution": "int_uniform",
+            "max": 128,
+            "min": 8,
+        },
+        "fc_layer_2": {
+            "distribution": "int_uniform",
+            "max": 128,
+            "min": 8,
+        },
+        "fc_layer_3": {
+            "distribution": "int_uniform",
+            "max": 128,
+            "min": 8,
+        },
+        "mem_size": {
+            "distribution": "int_uniform",
+            "max": 50_000,
+            "min": 1_000,
         },
     },
 }
@@ -172,4 +182,4 @@ def main():
 # Start the sweep
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="SoccerAI")
 
-wandb.agent(sweep_id, function=main, count=10)
+wandb.agent(sweep_id, function=main, count=100)

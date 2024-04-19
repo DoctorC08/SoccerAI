@@ -47,18 +47,48 @@ class ReplayMemory(object):
         return len(self.memory)
 
 
+class CircularBuffer(object):
+    def __init__(self, buffer_size):
+        self.index = -1
+        self.buffer_size = buffer_size
+        self.data = [0 for _ in range(buffer_size)]
+        self.is_full_buffer = False
+
+    def push(self, *args):
+        self.index += 1
+        if self.index >= self.buffer_size:
+            self.index = 0
+            self.is_full_buffer = True
+        self.data[self.index] = Transition(*args)
+
+    def sample(self, batch_size):
+        # print(self.data)
+        if self.is_full_buffer:
+            return random.sample(self.data, batch_size)
+        else:
+            return random.sample(self.data[:self.index], batch_size)
+
+    def __len__(self):
+        if self.is_full_buffer:
+            return self.buffer_size
+        else:
+            if self.index >= 0:
+                return self.index
+            else:
+                return 0
+
 class DQN(nn.Module):
 
-    def __init__(self, n_observations, n_actions):
+    def __init__(self, n_observations, n_actions, fc_layer_1=16, fc_layer_2=32, fc_layer_3=16):
         super(DQN, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(n_observations, 16),
+            nn.Linear(n_observations, fc_layer_1),
             nn.Mish(),
-            nn.Linear(16, 32),
+            nn.Linear(fc_layer_1, fc_layer_2),
             nn.Mish(),
-            nn.Linear(32, 16),
+            nn.Linear(fc_layer_2, fc_layer_3),
             nn.Mish(),
-            nn.Linear(16, n_actions),
+            nn.Linear(fc_layer_3, n_actions),
         )
     def forward(self, x):
         if verbose:
@@ -77,7 +107,7 @@ class DQN(nn.Module):
         #     return self.model(input)
 
 class Agent:
-    def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6):
+    def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6, fc_layer_1=16, fc_layer_2=32, fc_layer_3=16, mem_size=10_000):
         self.loss = 1
         self.n_actions = n_actions
         self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
@@ -92,14 +122,12 @@ class Agent:
         self.episode_durations = []
 
         # Declare policy and target nets
-        self.policy_net = DQN(n_observations, n_actions).to(device)
-        self.target_net = DQN(n_observations, n_actions).to(device)
+        self.policy_net = DQN(n_observations, n_actions, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3).to(device)
+        self.target_net = DQN(n_observations, n_actions, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        self.policy_net2 = DQN(n_observations, n_actions).to(device)
-
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
-        self.memory = ReplayMemory(10000)
+        self.memory = CircularBuffer(mem_size)
 
         self.steps_done = 0
 
@@ -218,68 +246,20 @@ class Agent:
 
 
 
-# training and plot duration funcs:
-    #
-    # def train(self, num_episodes = 600):
-    #     for i_episode in range(num_episodes):
-    #         print(f"Starting Training for {i_episode} Episode")
-    #         # Initialize the environment and get it's state
-    #         state = self.env.reset()
-    #         state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-    #         for t in count():
-    #             action = self.select_action(state)
-    #             observation, reward, terminated, truncated, _ = self.env.step(action.item())
-    #             self.episode_reward = reward
-    #             reward = torch.tensor([reward], device=device)
-    #             done = terminated or truncated
-    #
-    #             if terminated:
-    #                 next_state = None
-    #             else:
-    #                 next_state = torch.tensor(observation, dtype=torch.float32, device=device).unsqueeze(0)
-    #
-    #             # Store the transition in memory
-    #             self.memory.push(state, action, next_state, reward)
-    #
-    #             # Move to the next state
-    #             state = next_state
-    #
-    #             # Perform one step of the optimization (on the policy network)
-    #             self.optimize_model()
-    #
-    #             # Soft update of the target network's weights
-    #             # θ′ ← τ θ + (1 −τ )θ′
-    #             target_net_state_dict = self.target_net.state_dict()
-    #             policy_net_state_dict = self.policy_net.state_dict()
-    #             for key in policy_net_state_dict:
-    #                 target_net_state_dict[key] = policy_net_state_dict[key] * self.TAU + target_net_state_dict[key] * (1 - self.TAU)
-    #             self.target_net.load_state_dict(target_net_state_dict)
-    #
-    #             if done:
-    #                 self.episode_durations.append(t + 1)
-    #                 self.plot_durations(reward, show_result=False, )
-    #                 break
-    #
-    #     print('Training complete')
-    #     self.plot_durations(100, show_result=True)
-    #
-    # def plot_durations(self, reward, show_result=False):
-    #     plt.figure(1)
-    #     durations_t = torch.tensor(reward, dtype=torch.float)
-    #
-    #     if show_result:
-    #         plt.title('Result')
-    #     else:
-    #         plt.clf()
-    #         plt.title('Training...')
-    #     plt.xlabel('Episode')
-    #     plt.ylabel('Rewards')
-    #     plt.plot(durations_t.numpy())
-    #     if len(durations_t) >= 100:
-    #         means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-    #         means = torch.cat((torch.zeros(99), means))
-    #         plt.plot(means.numpy())
-    #
-    #     plt.pause(0.001)
-    #     if not show_result:
-    #         plt.show()  # Display the plot in the console #
+class pt_agent:
+    def __init__(self, agent_net):
+        self.loss = 1
+        self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
+        self.BATCH_SIZE = 100 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
+
+        self.episode_durations = []
+
+        # Declare policy and target nets
+        self.policy_net = agent_net
+        self.memory = CircularBuffer(10000)
+
+        self.steps_done = 0
+
+    def select_action(self, state):
+        return torch.argmax(self.policy_net(state))

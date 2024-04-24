@@ -26,3 +26,10 @@ config: {}
 2024-04-18 21:03:38,454 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_redirect():2255] Wrapping output streams.
 2024-04-18 21:03:38,454 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_redirect():2280] Redirects installed.
 2024-04-18 21:03:38,455 INFO    Thread-3 (_run_job):28748 [wandb_init.py:init():842] run started, returning control to user process
+2024-04-18 21:19:28,901 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_finish():2064] finishing run m_christopher/SoccerAI/5opkd0uf
+2024-04-18 21:19:28,901 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_atexit_cleanup():2304] got exitcode: 0
+2024-04-18 21:19:28,901 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_restore():2287] restore
+2024-04-18 21:19:28,901 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_restore():2293] restore done
+2024-04-18 21:19:32,104 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_footer_history_summary_info():3936] rendering history
+2024-04-18 21:19:32,106 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_footer_history_summary_info():3968] rendering summary
+2024-04-18 21:19:32,120 INFO    Thread-3 (_run_job):28748 [wandb_run.py:_footer_sync_info():3895] logging synced files

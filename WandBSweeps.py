@@ -41,7 +41,6 @@ def train(config):
                   lr=lr, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3, mem_size=mem_size)
 
     count = 0
-    final_rews = []
 
     for episode in tqdm(range(num_episodes)):
         state, _ = env.reset()
@@ -107,12 +106,23 @@ def train(config):
             "average_loss": sum(loss) / len(loss),
             "eps": agent.get_eps(),
         })
-        final_rews.append(sum(total_reward))
 
     agent.save_model(model_path)
 
-    # average total rew of past 100 eps
-    return sum(final_rews[-101:-1]) / 100
+    # get average reward for 100 episodes
+    final_reward = []
+    for i in range(100):
+        total_reward = []
+        while True:
+            action = agent.select_action(state)
+            obs, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+            total_reward.append(reward)
+            if done:
+                break
+        final_reward.append(sum(total_reward))
+
+    return sum(final_reward) / 100
 
 
 
@@ -176,7 +186,7 @@ sweep_configuration = {
 def main():
     wandb.init(project="SoccerAI")
     score = train(wandb.config)
-    wandb.log({"final": score})
+    wandb.log({"score": score})
 
 
 # Start the sweep

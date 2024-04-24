@@ -97,15 +97,6 @@ class DQN(nn.Module):
             return self.model(x)
         except:
             return self.model(torch.tensor(x, dtype=torch.float32))
-        # except TypeError:
-        #     input = []
-        #     for value in x.values:
-        #         print(value)
-        #         for item in value:
-        #             input.append(item)
-        #     print("forward input:", input)
-        #     return self.model(input)
-
 class Agent:
     def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6, fc_layer_1=16, fc_layer_2=32, fc_layer_3=16, mem_size=10_000):
         self.loss = 1
@@ -154,6 +145,8 @@ class Agent:
         else:
             return torch.tensor(random.randint(0, self.n_actions - 1), device=device, dtype=torch.long)
 
+    def select_non_random_action(self, state):
+        return torch.argmax(self.policy_net(state))
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
@@ -249,8 +242,8 @@ class Agent:
 class pt_agent:
     def __init__(self, agent_net):
         self.loss = 1
-        self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 100 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.n_agents = 1                       # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
+        self.BATCH_SIZE = 100 * self.n_agents   # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
 
         self.episode_durations = []

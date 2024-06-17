@@ -1,0 +1,18 @@
+wandb_version: 1
+
+Eps_decay:
+  value: 9157
+Eps_end:
+  value: 0.4424292776329038
+Eps_start:
+  value: 0.5361826728126335
+Lr:
+  value: 0.020178899781008106
+fc_layer:
+  value: 11
+mem_size:
+  value: 11960
+save_interval:
+  value: 1395
+timesteps:
+  value: 62995

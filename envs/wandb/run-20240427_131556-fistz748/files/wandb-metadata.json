@@ -1,0 +1,49 @@
+{
+    "os": "macOS-14.0-arm64-arm-64bit",
+    "python": "3.10.6",
+    "heartbeatAt": "2024-04-27T20:15:57.001101",
+    "startedAt": "2024-04-27T20:15:56.531480",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/christophermao/Documents/GitHub/SoccerAI/envs/Cart_Pole_Testing.py",
+    "codePathLocal": "Cart_Pole_Testing.py",
+    "codePath": "envs/Cart_Pole_Testing.py",
+    "git": {
+        "remote": "https://github.com/DoctorC08/SoccerAI.git",
+        "commit": "478f4db8f8db97806073ced8224350d12d6e56b0"
+    },
+    "email": "christopher_mao@branson.org",
+    "root": "/Users/christophermao/Documents/GitHub/SoccerAI",
+    "host": "ChristorMao2026.bad",
+    "username": "christophermao",
+    "executable": "/Users/christophermao/PycharmProjects/SoccerAI/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 3204,
+        "min": 600,
+        "max": 3204
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3204,
+            "min": 600,
+            "max": 3204
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 228.27386474609375,
+            "used": 12.910919189453125
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 8.0
+    }
+}

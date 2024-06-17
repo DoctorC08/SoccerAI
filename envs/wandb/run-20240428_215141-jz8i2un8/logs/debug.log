@@ -1,0 +1,35 @@
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Current SDK version is 0.16.6
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Configure stats pid to 73878
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Loading settings from /Users/christophermao/.config/wandb/settings
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Loading settings from /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/settings
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'project': 'CartPole', 'entity': 'm_christopher', 'root_dir': '/Users/christophermao/Documents/GitHub/SoccerAI/envs', 'run_id': 'jz8i2un8', 'sweep_param_path': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/sweep-5qpg8pmx/config-jz8i2un8.yaml', 'sweep_id': '5qpg8pmx'}
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'envs/Cart_Pole_Testing.py', 'program_abspath': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/Cart_Pole_Testing.py', 'program': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/Cart_Pole_Testing.py'}
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_init.py:_log_setup():521] Logging user logs to /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240428_215141-jz8i2un8/logs/debug.log
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_init.py:_log_setup():522] Logging internal logs to /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240428_215141-jz8i2un8/logs/debug-internal.log
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():561] calling init triggers
+2024-04-28 21:51:41,735 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():568] wandb.init called with sweep_config: {'Eps_decay': 3413, 'Eps_end': 0.049708601409893784, 'Eps_start': 0.5835734383072917, 'Lr': 0.09216506509152096, 'fc_layer': 107, 'mem_size': 35667, 'save_interval': 838, 'timesteps': 29662}
+config: {}
+2024-04-28 21:51:41,736 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():611] starting backend
+2024-04-28 21:51:41,736 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():615] setting up manager
+2024-04-28 21:51:41,746 INFO    Thread-43 (_run_job):73878 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-04-28 21:51:41,746 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():623] backend started and connected
+2024-04-28 21:51:41,753 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_config_callback():1347] config_cb None None {'Eps_decay': 3413, 'Eps_end': 0.049708601409893784, 'Eps_start': 0.5835734383072917, 'Lr': 0.09216506509152096, 'fc_layer': 107, 'mem_size': 35667, 'save_interval': 838, 'timesteps': 29662}
+2024-04-28 21:51:41,755 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():715] updated telemetry
+2024-04-28 21:51:41,773 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():748] communicating run to backend with 90.0 second timeout
+2024-04-28 21:51:42,073 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_on_init():2357] communicating current version
+2024-04-28 21:51:42,222 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_on_init():2366] got version response 
+2024-04-28 21:51:42,222 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():799] starting run threads in backend
+2024-04-28 21:51:42,383 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_console_start():2335] atexit reg
+2024-04-28 21:51:42,383 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_redirect():2190] redirect: wrap_raw
+2024-04-28 21:51:42,384 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_redirect():2255] Wrapping output streams.
+2024-04-28 21:51:42,384 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_redirect():2280] Redirects installed.
+2024-04-28 21:51:42,384 INFO    Thread-43 (_run_job):73878 [wandb_init.py:init():842] run started, returning control to user process
+2024-04-28 22:07:52,802 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_finish():2064] finishing run m_christopher/CartPole/jz8i2un8
+2024-04-28 22:07:52,803 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_atexit_cleanup():2304] got exitcode: 0
+2024-04-28 22:07:52,803 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_restore():2287] restore
+2024-04-28 22:07:52,803 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_restore():2293] restore done
+2024-04-28 22:07:57,372 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_footer_history_summary_info():3936] rendering history
+2024-04-28 22:07:57,373 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_footer_history_summary_info():3968] rendering summary
+2024-04-28 22:07:57,386 INFO    Thread-43 (_run_job):73878 [wandb_run.py:_footer_sync_info():3895] logging synced files

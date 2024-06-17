@@ -17,8 +17,8 @@ verbose = False
 global Mtime
 Mtime = False
 
-# init wandb
-wandb.login()
+
+
 
 def train(config):
     env = gym.make('CartPole-v1')
@@ -26,25 +26,23 @@ def train(config):
     Eps_start = config.Eps_start
     Eps_end = config.Eps_end
     Eps_decay = config.Eps_decay
-    num_episodes = config.episodes
     lr = config.Lr
-    fc_layer_1 = config.fc_layer_1
-    fc_layer_2 = config.fc_layer_2
-    fc_layer_3 = config.fc_layer_3
+    fc_layer = config.fc_layer
     mem_size = config.mem_size
     name = f"GS-DQN-1.0"
     model_path = f"/Users/christophermao/Desktop/RLModels/{name}"
 
     agent = Agent(2, 4, eps_start=Eps_start, eps_end=Eps_end, eps_decay=Eps_decay,
-                  lr=lr, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3, mem_size=mem_size)
+                  lr=lr, fc_layer=fc_layer, mem_size=mem_size)
 
     count = 0
 
-    for episode in tqdm(range(num_episodes)):
+    while True:
         state, _ = env.reset()
         total_reward = []
         loss = []
         len_episode = 0
+
 
         while True:
             len_episode += 1
@@ -70,16 +68,18 @@ def train(config):
 
             time2 = time.time()
 
-            agent.optimize_model()
-            loss.append(agent.loss)
+            if count % 128:
+                agent.optimize_model()
+                loss.append(agent.loss)
 
             time3 = time.time()
 
-            target_net_state_dict = agent.target_net.state_dict()
-            policy_net_state_dict = agent.policy_net.state_dict()
-            for key in policy_net_state_dict:
-                target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (1 - agent.TAU)
-            agent.target_net.load_state_dict(target_net_state_dict)
+            if count % config.save_interval == 0:
+                target_net_state_dict = agent.target_net.state_dict()
+                policy_net_state_dict = agent.policy_net.state_dict()
+                for key in policy_net_state_dict:
+                    target_net_state_dict[key] = policy_net_state_dict[key] * agent.TAU + target_net_state_dict[key] * (1 - agent.TAU)
+                agent.target_net.load_state_dict(target_net_state_dict)
 
             time4 = time.time()
 
@@ -105,6 +105,9 @@ def train(config):
             "eps": agent.get_eps(),
         })
 
+        if count > config.timesteps:
+            break
+
     agent.save_model(model_path)
 
     # get average reward for 100 episodes
@@ -114,7 +117,7 @@ def train(config):
         obs, _ = env.reset()
         while True:
             action = agent.select_non_random_action(obs)
-            obs, reward, terminated, truncated, _ = env.step(action)
+            obs, reward, terminated, truncated, _ = env.step(np.array(action))
             done = terminated or truncated
             total_reward.append(reward)
             if done:
@@ -125,6 +128,9 @@ def train(config):
 
 
 
+
+# init wandb
+wandb.login()
 
 # Define the search space
 sweep_configuration = {
@@ -154,22 +160,12 @@ sweep_configuration = {
             "max": 0.1,
             "min": 1e-07,
         },
-        "episodes": {
+        "timesteps": {
             "distribution": "int_uniform",
-            "max": 5000,
-            "min": 500,
+            "max": 100_000,
+            "min": 10_00,
         },
-        "fc_layer_1": {
-            "distribution": "int_uniform",
-            "max": 128,
-            "min": 8,
-        },
-        "fc_layer_2": {
-            "distribution": "int_uniform",
-            "max": 128,
-            "min": 8,
-        },
-        "fc_layer_3": {
+        "fc_layer": {
             "distribution": "int_uniform",
             "max": 128,
             "min": 8,
@@ -179,17 +175,22 @@ sweep_configuration = {
             "max": 50_000,
             "min": 500,
         },
+        "save_interval": {
+            "distribution": "int_uniform",
+            "max": 2_000,
+            "min": 500,
+        }
     },
 }
 
 def main():
     wandb.init(project="CartPole")
     score = train(wandb.config)
-    wandb.log({"score": score})
-
+    print(score)
+    wandb.log({"final": score})
 
 # Start the sweep
 sweep_id = wandb.sweep(sweep=sweep_configuration, project="CartPole")
 
-wandb.agent(sweep_id, function=main, count=10)
+wandb.agent(sweep_id, function=main)
 

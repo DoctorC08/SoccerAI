@@ -1,0 +1,20 @@
+wandb_version: 1
+
+Eps_decay:
+  value: 4882
+Eps_end:
+  value: 0.23102734100095465
+Eps_start:
+  value: 0.305044599044056
+Lr:
+  value: 0.0654600057528741
+episodes:
+  value: 4916
+fc_layer_1:
+  value: 103
+fc_layer_2:
+  value: 96
+fc_layer_3:
+  value: 45
+mem_size:
+  value: 45966

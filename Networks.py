@@ -79,30 +79,55 @@ class CircularBuffer(object):
 
 class DQN(nn.Module):
 
-    def __init__(self, n_observations, n_actions, fc_layer_1=16, fc_layer_2=32, fc_layer_3=16):
+    def __init__(self, n_observations, n_actions, fc_layer=16):
         super(DQN, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(n_observations, fc_layer_1),
+            nn.BatchNorm1d(n_observations, affine=False, track_running_stats=True),
+            nn.Linear(n_observations, fc_layer),
             nn.Mish(),
-            nn.Linear(fc_layer_1, fc_layer_2),
+            nn.Linear(fc_layer, fc_layer),
             nn.Mish(),
-            nn.Linear(fc_layer_2, fc_layer_3),
+            nn.Linear(fc_layer, fc_layer),
             nn.Mish(),
-            nn.Linear(fc_layer_3, n_actions),
+            nn.Linear(fc_layer, n_actions),
         )
+
+    def exponential_moving_average(self, input, moving_avg, ema_decay=0.99):
+        return input * (1 - ema_decay) + ema_decay * moving_avg
+
+    def normalize_inputs(self, input, moving_avg_x, moving_avg_x2, ema_decay=0.99, eps=1e-12):
+        # x
+        moving_avg_x = self.exponential_moving_average(input, moving_avg_x, ema_decay)
+        # x^2
+        moving_avg_x2 = self.exponential_moving_average(input**2, moving_avg_x2, ema_decay)
+        moving_avg_std = torch.sqrt(moving_avg_x2 - moving_avg_x**2)
+        normalized = (input-moving_avg_x) / (moving_avg_std + eps)
+        return normalized, moving_avg_x, moving_avg_x2
+
     def forward(self, x):
         if verbose:
             print("input into nn:", x)
         try:
-            return self.model(x)
+            x = x.clone().detach()
         except:
-            return self.model(torch.tensor(x, dtype=torch.float32))
+            x = torch.tensor(x, dtype=torch.float32)
+        match len(x.shape):
+            case 1:
+                x = x[None]
+            case 2:
+                pass
+            case _:
+                raise ValueError(f"expected 1d or 2d input, got {x.shape}")
+        return self.model(x)
+
 class Agent:
-    def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6, fc_layer_1=16, fc_layer_2=32, fc_layer_3=16, mem_size=10_000):
+    def __init__(self, n_actions, n_observations, eps_start=0.9, eps_end=0.05, eps_decay=10_000, lr=1e-6, fc_layer=16, mem_size=10_000):
+        # TODO: stack previous obs
+
         self.loss = 1
         self.n_actions = n_actions
         self.n_agents = 1                      # n_agents is the number of total agents in the enviornment, so updates can roll out every round-robin play through
-        self.BATCH_SIZE = 100 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
+        self.BATCH_SIZE = 3200 * self.n_agents # BATCH_SIZE is the number of transitions sampled from the replay buffer
         self.GAMMA = 0.99                       # GAMMA is the discount factor as mentioned in the previous section
         self.EPS_START = eps_start                    # EPS_START is the starting value of epsilon
         self.EPS_END = eps_end                     # EPS_END is the final value of epsilon
@@ -113,8 +138,8 @@ class Agent:
         self.episode_durations = []
 
         # Declare policy and target nets
-        self.policy_net = DQN(n_observations, n_actions, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3).to(device)
-        self.target_net = DQN(n_observations, n_actions, fc_layer_1=fc_layer_1, fc_layer_2=fc_layer_2, fc_layer_3=fc_layer_3).to(device)
+        self.policy_net = DQN(n_observations, n_actions, fc_layer=fc_layer).to(device)
+        self.target_net = DQN(n_observations, n_actions, fc_layer=fc_layer).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
         self.optimizer = optim.AdamW(self.policy_net.parameters(), lr=self.LR, amsgrad=True)
@@ -128,6 +153,7 @@ class Agent:
         return eps
 
     def select_action(self, state):
+        self.policy_net.eval()
         sample = random.random()
         eps_threshold = self.EPS_END + (self.EPS_START - self.EPS_END) * \
             math.exp(-1. * self.steps_done / self.EPS_DECAY)
@@ -146,11 +172,13 @@ class Agent:
             return torch.tensor(random.randint(0, self.n_actions - 1), device=device, dtype=torch.long)
 
     def select_non_random_action(self, state):
+        self.policy_net.eval()
         return torch.argmax(self.policy_net(state))
 
     def optimize_model(self):
         if len(self.memory) < self.BATCH_SIZE:
             return
+        self.policy_net.train()
         transitions = self.memory.sample(self.BATCH_SIZE)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions

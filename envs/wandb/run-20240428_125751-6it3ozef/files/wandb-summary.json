@@ -1,0 +1,1 @@
+{"len_episodes:": 9, "total_reward": 9.0, "average_reward": 1.0, "sum_loss": 1.3884686268283986e-05, "average_loss": 1.542742893434479e-06, "eps": 0.12492110267514196, "_timestamp": 1714335258.765975, "_runtime": 987.3093109130859, "_step": 7932, "final": 9.18, "_wandb": {"runtime": 986}}

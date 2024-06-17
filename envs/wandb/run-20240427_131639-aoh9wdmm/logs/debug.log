@@ -1,0 +1,35 @@
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Current SDK version is 0.16.6
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Configure stats pid to 40065
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Loading settings from /Users/christophermao/.config/wandb/settings
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Loading settings from /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/settings
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'project': 'CartPole', 'entity': 'm_christopher', 'root_dir': '/Users/christophermao/Documents/GitHub/SoccerAI/envs', 'run_id': 'aoh9wdmm', 'sweep_param_path': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/sweep-svj5r5gy/config-aoh9wdmm.yaml', 'sweep_id': 'svj5r5gy'}
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'envs/Cart_Pole_Testing.py', 'program_abspath': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/Cart_Pole_Testing.py', 'program': '/Users/christophermao/Documents/GitHub/SoccerAI/envs/Cart_Pole_Testing.py'}
+2024-04-27 13:16:39,408 INFO    Thread-11 (_run_job):40065 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:_log_setup():521] Logging user logs to /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240427_131639-aoh9wdmm/logs/debug.log
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:_log_setup():522] Logging internal logs to /Users/christophermao/Documents/GitHub/SoccerAI/envs/wandb/run-20240427_131639-aoh9wdmm/logs/debug-internal.log
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():561] calling init triggers
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():568] wandb.init called with sweep_config: {'Eps_decay': 16085, 'Eps_end': 0.07185517600843908, 'Eps_start': 0.7191625774397188, 'Lr': 0.01276809624563161, 'episodes': 725, 'fc_layer_1': 30, 'fc_layer_2': 117, 'fc_layer_3': 31, 'mem_size': 46142}
+config: {}
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():611] starting backend
+2024-04-27 13:16:39,409 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():615] setting up manager
+2024-04-27 13:16:39,418 INFO    Thread-11 (_run_job):40065 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-04-27 13:16:39,419 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():623] backend started and connected
+2024-04-27 13:16:39,427 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_config_callback():1347] config_cb None None {'Eps_decay': 16085, 'Eps_end': 0.07185517600843908, 'Eps_start': 0.7191625774397188, 'Lr': 0.01276809624563161, 'episodes': 725, 'fc_layer_1': 30, 'fc_layer_2': 117, 'fc_layer_3': 31, 'mem_size': 46142}
+2024-04-27 13:16:39,431 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():715] updated telemetry
+2024-04-27 13:16:39,448 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():748] communicating run to backend with 90.0 second timeout
+2024-04-27 13:16:39,747 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_on_init():2357] communicating current version
+2024-04-27 13:16:39,836 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_on_init():2366] got version response 
+2024-04-27 13:16:39,836 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():799] starting run threads in backend
+2024-04-27 13:16:39,989 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_console_start():2335] atexit reg
+2024-04-27 13:16:39,989 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_redirect():2190] redirect: wrap_raw
+2024-04-27 13:16:39,990 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_redirect():2255] Wrapping output streams.
+2024-04-27 13:16:39,990 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_redirect():2280] Redirects installed.
+2024-04-27 13:16:39,991 INFO    Thread-11 (_run_job):40065 [wandb_init.py:init():842] run started, returning control to user process
+2024-04-27 13:17:11,785 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_finish():2064] finishing run m_christopher/CartPole/aoh9wdmm
+2024-04-27 13:17:11,785 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_atexit_cleanup():2304] got exitcode: 1
+2024-04-27 13:17:11,785 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_restore():2287] restore
+2024-04-27 13:17:11,785 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_restore():2293] restore done
+2024-04-27 13:17:16,784 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_footer_history_summary_info():3936] rendering history
+2024-04-27 13:17:16,787 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_footer_history_summary_info():3968] rendering summary
+2024-04-27 13:17:16,798 INFO    Thread-11 (_run_job):40065 [wandb_run.py:_footer_sync_info():3895] logging synced files

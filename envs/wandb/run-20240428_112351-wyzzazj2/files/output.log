@@ -1,3 +1,0 @@
-Create sweep with ID: 8nov1suv
-Sweep URL: https://wandb.ai/m_christopher/CartPole/sweeps/8nov1suv
-wandb: WARNING Calling wandb.login() after wandb.init() has no effect.

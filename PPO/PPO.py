@@ -12,6 +12,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 
+import time
+
 global verbose
 verbose = False
 
@@ -75,11 +77,17 @@ class ActorNetwork(nn.Module):
         self.device = torch.device("mps") 
         self.to(self.device)
 
-    def forward(self, state):
-        dist = self.model(state)
-        dist = Categorical(dist)
-
-        return dist
+    def forward(self, state, train_mode=True):
+        if train_mode:
+            self.model.train()
+            dist = self.model(state)
+            dist = Categorical(dist)
+            return dist
+        else:
+            self.model.eval()
+            dist = self.model(state)
+            return torch.argmax(dist)
+        
     
     def load(self, model_path):
         self.load_state_dict(torch.load(model_path))
@@ -104,9 +112,14 @@ class CriticNetwork(nn.Module):
         self.device = torch.device("mps") 
         self.to(self.device)
 
-    def forward(self, state):
+    def forward(self, state, train_mode = True):
+        if train_mode:
+            self.model.train()
+        else:
+            self.model.eval()
         value = self.model(state)
         return value
+
     
     def load(self, model_path):
         self.load_state_dict(torch.load(model_path))
@@ -116,39 +129,54 @@ class CriticNetwork(nn.Module):
 
 class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.003, gae_lambda=0.95, 
-                 policy_clip=0.2, batch_size=64, horizon=2048, n_epochs=10):
+                 policy_clip=0.2, batch_size=64, n_epochs=1, fc_layer=32):
         self.gamma = gamma
         self.policy_clip = policy_clip
         self.n_epochs = n_epochs
         self.gae_lambda = gae_lambda
 
-        self.actor = ActorNetwork(n_actions, input_dims, alpha)
-        self.critic = CriticNetwork(input_dims, alpha)
+        self.actor = ActorNetwork(n_actions, input_dims, alpha, fc_dims=fc_layer)
+        self.critic = CriticNetwork(input_dims, alpha, fc_dims=fc_layer)
         self.memory = PPOMemory(batch_size)
 
     def remember(self, state, action, probs, vals, rewards, done):
         self.memory.store_memory(state, action, probs, vals, rewards, done)
 
-    def save_models(self):
-        self.actor.save_model("/Users/christophermao/Desktop/PPO/")
-        self.critic.save_model("/Users/christophermao/Desktop/PPO/")
+    def save_models(self, name=""):
+        self.actor.save_model("/Users/christophermao/Desktop/PPO/" + name)
+        self.critic.save_model("/Users/christophermao/Desktop/PPO/" + name)
     
     def load_models(self):
         self.actor.load("/Users/christophermao/Desktop/PPO/")
         self.critic.load("/Users/christophermao/Desktop/PPO/")
 
-    def choose_action(self, observation):
-        state = torch.tensor(np.array(observation), dtype=torch.float).to(self.actor.device)
-        
-        dist = self.actor(state)
-        value = self.critic(state)
-        action = dist.sample()
+    def choose_action(self, observation, train_mode=True):
+        # state = torch.tensor(np.array(observation), dtype=torch.float).to(self.actor.device)
+        if train_mode:
+            state = torch.FloatTensor(observation).unsqueeze(0).to(self.actor.device)
 
-        probs = torch.squeeze(dist.log_prob(action)).item() 
-        action = torch.squeeze(action).item() 
-        value = torch.squeeze(value).item() 
+            with torch.no_grad():
+                dist = self.actor(state)
+                value = self.critic(state)
+                action = dist.sample()
 
-        return action, probs, value
+            # probs = torch.squeeze(dist.log_prob(action)).item() 
+            # action = torch.squeeze(action).item() 
+            # value = torch.squeeze(value).item() 
+
+            probs = dist.log_prob(action).item()
+            action = action.item()
+            value = value.item()
+
+            return action, probs, value
+        else:
+            state = torch.FloatTensor(observation).unsqueeze(0).to(self.actor.device)
+
+            with torch.no_grad():
+                action = self.actor(state, train_mode=False)
+            action = action.item()
+
+            return action
     
     def learn(self):
         for _ in range(self.n_epochs):
@@ -196,6 +224,7 @@ class PPOAgent:
                 self.critic.optimizer.step()
 
         self.memory.clear_memory()
+        return total_loss
 
 
 

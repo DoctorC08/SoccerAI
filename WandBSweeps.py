@@ -113,6 +113,7 @@ def train(config):
     final_reward = []
     for i in range(100):
         total_reward = []
+        state, _ = env.reset()
         while True:
             action = agent.select_action(state)
             obs, reward, terminated, truncated, _ = env.step(action)

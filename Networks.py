@@ -24,7 +24,7 @@ is_ipython = 'inline' in matplotlib.get_backend()
 plt.ion()
 
 # if GPU is to be used
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "mpu")
 
 
 Transition = namedtuple('Transition',

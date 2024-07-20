@@ -1,5 +1,0 @@
-  0%|          | 0/1000 [00:00<?, ?it/s]
-Traceback (most recent call last):
-  File "/Users/christophermao/Documents/GitHub/SoccerAI/envs/test.py", line 110, in <module>
-    "sum_loss": sum(loss),
-TypeError: unsupported operand type(s) for +: 'int' and 'NoneType'

@@ -1,16 +1,16 @@
-import math
-import random
-import matplotlib
-import matplotlib.pyplot as plt
-from collections import namedtuple, deque
-from itertools import count
+# import math
+# import random
+# import matplotlib
+# import matplotlib.pyplot as plt
+# from collections import namedtuple, deque
+# from itertools import count
 import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.distribution.categorical import Categorical
+from torch.distributions.categorical import Categorical
 
 global verbose
 verbose = False
@@ -28,13 +28,13 @@ class PPOMemory:
 
     def generate_batches(self):
         n_states = len(self.states)
-        batch_start = np.arrange(0, n_states, self.batch_size)
-        indicies = np.arrange(n_states, dtype=np.int64)
+        batch_start = np.arange(0, n_states, self.batch_size)
+        indicies = np.arange(n_states, dtype=np.int32)
         np.random.shuffle(indicies)
         batches = [indicies[i : i + self.batch_size] for i in batch_start]
         
         return np.array(self.states), \
-                np.array[self.actions],\
+                np.array(self.actions),\
                 np.array(self.probs),\
                 np.array(self.vals),\
                 np.array(self.rewards),\
@@ -71,8 +71,8 @@ class ActorNetwork(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-        self.optimizer = optim.Adam(self.paramaters(), lr=alpha)
-        self.device = torch.device("Mpu") 
+        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
+        self.device = torch.device("mps") 
         self.to(self.device)
 
     def forward(self, state):
@@ -85,7 +85,7 @@ class ActorNetwork(nn.Module):
         self.load_state_dict(torch.load(model_path))
 
     def save_model(self, model_path):
-        torch.save(self.policy_net, model_path + "_Actor_PPO.pt")
+        torch.save(self.model, model_path + "_Actor_PPO.pt")
 
 class CriticNetwork(nn.Module):
     def __init__(self, input_dims, alpha, fc_dims=64):
@@ -100,18 +100,19 @@ class CriticNetwork(nn.Module):
             nn.Linear(fc_dims, 1)
         )
 
-        self.optimizer = optim.Adam(self.paramaters(), lr=alpha)
-        self.device = torch.device("Mpu") 
+        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
+        self.device = torch.device("mps") 
         self.to(self.device)
 
     def forward(self, state):
         value = self.model(state)
+        return value
     
     def load(self, model_path):
         self.load_state_dict(torch.load(model_path))
 
     def save_model(self, model_path):
-        torch.save(self.policy_net, model_path + "_Critic_PPO.pt")
+        torch.save(self.model, model_path + "_Critic_PPO.pt")
 
 class PPOAgent:
     def __init__(self, n_actions, input_dims, gamma=0.99, alpha=0.003, gae_lambda=0.95, 
@@ -137,7 +138,7 @@ class PPOAgent:
         self.critic.load("/Users/christophermao/Desktop/PPO/")
 
     def choose_action(self, observation):
-        state = torch.tensor([observation], dtype=torch.float).to(self.actor.device)
+        state = torch.tensor(np.array(observation), dtype=torch.float).to(self.actor.device)
         
         dist = self.actor(state)
         value = self.critic(state)
@@ -152,7 +153,7 @@ class PPOAgent:
     def learn(self):
         for _ in range(self.n_epochs):
             state_arr, action_arr, old_probs_arr, vals_arr,\
-            reward_arr, dones_arr, batches = self.memory.generate_batches()
+                reward_arr, dones_arr, batches = self.memory.generate_batches()
 
             values = vals_arr
             advantage = np.zeros(len(reward_arr), dtype=np.float32)
@@ -166,11 +167,11 @@ class PPOAgent:
                 advantage[t] = a_t
             advantage = torch.tensor(advantage).to(self.actor.device)
 
-            values = torch.tensor(values).to(self.actor.device)
+            values = torch.tensor(values, dtype=torch.float32).to(self.actor.device)
             for batch in batches:
                 states = torch.tensor(state_arr[batch], dtype=torch.float).to(self.actor.device)
-                old_probs = torch.tensor(old_probs_arr[batch]).to(self.actor.device)
-                actions = torch.tensor(action_arr[batch]).to(self.actor.device)
+                old_probs = torch.tensor(old_probs_arr[batch], dtype=torch.float32).to(self.actor.device)
+                actions = torch.tensor(action_arr[batch], dtype=torch.float32).to(self.actor.device)
 
                 dist = self.actor(states)
                 critic_value = self.critic(states)

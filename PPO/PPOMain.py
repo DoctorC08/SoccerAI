@@ -130,7 +130,7 @@ def main():
     wandb.log({"score": score})
 
 # Start the sweep
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="CartPole")
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="SoccerAI")
 
 wandb.agent(sweep_id, function=main, count=20)
 

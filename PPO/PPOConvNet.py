@@ -61,7 +61,7 @@ class PPOMemory:
     
 # Actor network
 class ActorNetwork(nn.Module):
-    def __init__(self, input_size, n_actions, alpha, input_dims=1, n_frame_stack=4, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
+    def __init__(self, input_size, n_actions, alpha, n_frame_stack=4, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
                                                                           'kernal': 3, 'stride': 3, 'padding': 0}):
         super(ActorNetwork, self).__init__()
 
@@ -140,7 +140,7 @@ class ActorNetwork(nn.Module):
 # Critic Network
 # input dims = 4 because [stacks, color, width, height]
 class CriticNetwork(nn.Module):
-    def __init__(self, input_size, alpha, input_dim=1, n_frame_stack=4, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
+    def __init__(self, input_size, alpha, n_frame_stack=4, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
                                                                             'kernal': 3, 'stride': 3, 'padding': 0}):
         super(CriticNetwork, self).__init__()
 
@@ -203,7 +203,8 @@ class CriticNetwork(nn.Module):
 
 class PPOConvAgent:
     def __init__(self, input_size, n_actions, n_frame_stack=4, gamma=0.99, alpha=0.003, gae_lambda=0.95, 
-                 policy_clip=0.2, batch_size=64, n_epochs=1): # TODO: add paramaters for fc_config
+                 policy_clip=0.2, batch_size=64, n_epochs=1, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
+                    'kernal': 3, 'stride': 3, 'padding': 0}): 
         self.gamma = gamma                      # future discount rewards
         self.policy_clip = policy_clip          # clipping parameter
         self.n_epochs = n_epochs                # n epochs
@@ -211,8 +212,8 @@ class PPOConvAgent:
         self.n_frame_stack = n_frame_stack
 
         # networks and memory
-        self.actor = ActorNetwork(input_size, n_actions, alpha, n_frame_stack=n_frame_stack)
-        self.critic = CriticNetwork(input_size, alpha, n_frame_stack=n_frame_stack)
+        self.actor = ActorNetwork(input_size, n_actions, alpha, n_frame_stack=n_frame_stack, fc_config=fc_config)
+        self.critic = CriticNetwork(input_size, alpha, n_frame_stack=n_frame_stack, fc_config=fc_config)
         self.memory = PPOMemory(batch_size)
 
     def remember(self, state, action, probs, vals, rewards, done): # store values in memory

@@ -17,14 +17,24 @@ def train(config, device):
     n_epochs = config.n_epochs              # n epochs: 10
     alpha = config.lr                       # lr: 0.0003
     n_games = config.n_games                # n games: 300
-    fc_layers = config.fc_layers            # neurons in layer #TODO: Fix parameters
     n_frame_stack = config.n_frame_stack    # stacked frames 
+
+    fc_config={
+        'conv1': config.conv1, 
+        'conv2': config.conv1, 
+        'linear': config.linear, 
+        'kernal': config.kernal, 
+        'stride': config.stride, 
+        'padding': config.padding
+    }
+    # fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 'kernal': 3, 'stride': 3, 'padding': 0}
+
 
     stack_index = 1
 
 
     agent = PPOConvAgent(input_size=env.observation_space.shape, n_actions=env.action_space.n, batch_size=batch_size, alpha=alpha, 
-              n_epochs=n_epochs, n_frame_stack=n_frame_stack)
+              n_epochs=n_epochs, n_frame_stack=n_frame_stack, fc_config=fc_config)
 
     best_score = env.reward_range[0]
     score_history = []
@@ -63,7 +73,7 @@ def train(config, device):
             avg_score = np.mean(score_history[-100])
         if avg_score > best_score:
             best_score = avg_score
-            agent.save_models(name=str(i))
+            agent.save_models(name=str(i) + "Tetris")
 
         # print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 
         #     'time_steps', n_steps, 'learning_steps', learn_iters)
@@ -127,16 +137,41 @@ sweep_configuration = {
             "max": 100,
             "min": 20,
         },
-        "fc_layers": {
-            "distribution": "int_uniform",
-            "max": 128,
-            "min": 8,
-        },
         "n_frame_stack": {
             "distribution": "int_uniform",
             "max": 8,
             "min": 2,
-        }
+        }, 
+        "conv1": {
+            "distribution": "int_uniform",
+            "max": 64,
+            "min": 16,
+        },
+        "conv2": {
+            "distribution": "int_uniform",
+            "max": 32,
+            "min": 8,
+        },
+        "linear": {
+            "distribution": "int_uniform",
+            "max": 64,
+            "min": 16,
+        },
+        "kernal": {
+            "distribution": "int_uniform",
+            "max": 9,
+            "min": 3,
+        },
+        "stride": {
+            "distribution": "int_uniform",
+            "max": 9,
+            "min": 3,
+        },
+        "padding": {
+            "distribution": "int_uniform",
+            "max": 3,
+            "min": 0,
+        },
     },
 }
 

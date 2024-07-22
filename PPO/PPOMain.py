@@ -1,6 +1,6 @@
 import gymnasium as gym
 import numpy as np
-from PPO import PPOAgent
+from PPOConvNet import PPOConvAgent
 from tqdm import tqdm
 import wandb
 import torch
@@ -11,17 +11,20 @@ wandb.login()
 
 def train(config, device):
 
-    env = gym.make('CartPole-v1')
+    env = gym.make("ALE/Tetris-v5", obs_type="grayscale")
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
     n_epochs = config.n_epochs              # n epochs: 10
     alpha = config.lr                       # lr: 0.0003
     n_games = config.n_games                # n games: 300
-    fc_layers = config.fc_layers            # neurons in layer
+    fc_layers = config.fc_layers            # neurons in layer #TODO: Fix parameters
+    n_frame_stack = config.n_frame_stack    # stacked frames 
+
+    stack_index = 1
 
 
-    agent = PPOAgent(n_actions=env.action_space.n, batch_size=batch_size, alpha=alpha, 
-              n_epochs=n_epochs, input_dims=env.observation_space.shape, fc_layer=fc_layers).to(device)
+    agent = PPOConvAgent(input_size=env.observation_space.shape, n_actions=env.action_space.n, batch_size=batch_size, alpha=alpha, 
+              n_epochs=n_epochs, n_frame_stack=n_frame_stack)
 
     best_score = env.reward_range[0]
     score_history = []
@@ -29,12 +32,15 @@ def train(config, device):
     learn_iters = 0
     avg_score = 0
     n_steps = 0
-
+    agent.actor.train()
+    agent.critic.train()
     for i in tqdm(range(n_games)):
         observation, _ = env.reset()
         done = False
+        # first_frame = True
         score = 0
         loss = []
+        observation = [observation] * n_frame_stack
         while not done:
             action, prob, val = agent.choose_action(observation)
             obs, reward, terminated, truncated, _ = env.step(action)
@@ -42,10 +48,16 @@ def train(config, device):
             score += reward
             done = terminated or truncated
             agent.remember(observation, action, prob, val, reward, done)
-            if n_steps % N == 0:
+
+            observation[stack_index] = obs
+            stack_index = (stack_index + 1) % n_frame_stack
+
+            if n_steps % N == 0: # update
                 loss.append(agent.learn())
                 learn_iters += 1
-            observation = obs
+            
+            # observation = obs
+            # first_frame = False
         score_history.append(score)
         if (len(score_history) > 100):
             avg_score = np.mean(score_history[-100])
@@ -93,12 +105,12 @@ sweep_configuration = {
         "N": {
             "distribution": "int_uniform",
             "max": 100,
-            "min": 5
+            "min": 20
         },
         "batch_size": {
             "distribution": "int_uniform",
-            "max": 25,
-            "min": 5,
+            "max": 100,
+            "min": 20,
         },
         "n_epochs": {
             "distribution": "int_uniform",
@@ -120,6 +132,11 @@ sweep_configuration = {
             "max": 128,
             "min": 8,
         },
+        "n_frame_stack": {
+            "distribution": "int_uniform",
+            "max": 8,
+            "min": 2,
+        }
     },
 }
 
@@ -130,7 +147,7 @@ def main():
     wandb.log({"score": score})
 
 # Start the sweep
-sweep_id = wandb.sweep(sweep=sweep_configuration, project="SoccerAI")
+sweep_id = wandb.sweep(sweep=sweep_configuration, project="Tetris")
 
 wandb.agent(sweep_id, function=main, count=20)
 

@@ -9,9 +9,11 @@ wandb.login()
 
 
 
-def train(config, device):
+def train(config):
 
-    env = gym.make("ALE/Tetris-v5", obs_type="grayscale")
+    env = gym.make("ALE/Tetris-v5", obs_type="grayscale", render_mode="human")
+    env.metadata['render_fps'] = 60
+    
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
     n_epochs = config.n_epochs              # n epochs: 10
@@ -52,6 +54,7 @@ def train(config, device):
         loss = []
         observation = [observation] * n_frame_stack
         while not done:
+            # env.render()
             action, prob, val = agent.choose_action(observation)
             obs, reward, terminated, truncated, _ = env.step(action)
             n_steps += 1
@@ -75,8 +78,8 @@ def train(config, device):
             best_score = avg_score
             agent.save_models(name=str(i) + "Tetris")
 
-        # print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 
-        #     'time_steps', n_steps, 'learning_steps', learn_iters)
+        print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 
+            'time_steps', n_steps, 'learning_steps', learn_iters)
         wandb.log({
             'Score': score, 
             'Average Score': avg_score,
@@ -91,8 +94,8 @@ def train(config, device):
         total_reward = []
         obs, _ = env.reset()
         while True:
+            # env.render()
             action = agent.choose_action(obs, train_mode=False)
-            # action = torch.squeeze(action).item() 
             obs, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
             total_reward.append(reward)
@@ -129,7 +132,7 @@ sweep_configuration = {
         },
         "lr": {
             "distribution": "uniform",
-            "max": 0.1,
+            "max": 0.001,
             "min": 1e-07,
         },
         "n_games": {
@@ -177,8 +180,7 @@ sweep_configuration = {
 
 def main():
     wandb.init()
-    device = torch.device("mps")
-    score = train(wandb.config, device)
+    score = train(wandb.config)
     wandb.log({"score": score})
 
 # Start the sweep

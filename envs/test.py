@@ -7,8 +7,28 @@ from tqdm import tqdm
 import wandb
 import numpy as np
 import random as rand
+
 # from Enviornment import GridSoccer
 # from Networks import Agent
 # from Graphs import Graph
-list = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-print(list[8-5+1:8+1])
+
+
+import gymnasium as gym
+
+env = gym.make("ALE/Tetris-v5", obs_type="grayscale", render_mode="human")
+observation = env.reset()
+
+if 'render_fps' not in env.metadata:
+    env.metadata['render_fps'] = 60
+
+done = False
+while not done:
+    env.render()
+    
+    action = env.action_space.sample()
+    
+    observation, reward, terminated, truncated, _ = env.step(action)
+    done = terminated or truncated
+    
+
+env.close()

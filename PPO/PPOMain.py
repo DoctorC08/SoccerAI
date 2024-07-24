@@ -1,23 +1,23 @@
 import gymnasium as gym
+from gymnasium.wrappers import AtariPreprocessing, RecordVideo
+
+
 import numpy as np
 from PPOConvNet import PPOConvAgent
 from tqdm import tqdm
 import wandb
 import time
-import cv2
 
 wandb.login()
 
-def preprocess_frame(frame):
-    # Resize frame
-    frame = cv2.resize(frame, (84, 84))
-    # Normalize pixel values
-    frame = frame / 255.0
-    return frame
-
 
 def train(config):
-    env = gym.make("ALE/Tetris-v5", obs_type="grayscale")
+    env = gym.make("ALE/Tetris-v5", obs_type="grayscale", frameskip=1, render_mode='rgb_array')
+    env = AtariPreprocessing(env, screen_size=84, scale_obs=True)
+    env = RecordVideo(env, 
+                      video_folder="/Users/christophermao/Documents/GitHub/SoccerAI/Videos", 
+                      episode_trigger=lambda x: x % 50 == 0, 
+                      video_length=500)
     # env.metadata['render_fps'] = 60
     
     N = config.N                            # update agent every N steps: 20
@@ -59,14 +59,12 @@ def train(config):
         score = 0
         loss = []
 
-        observation = preprocess_frame(observation)
         observation = [observation] * n_frame_stack
 
         while not done:
             action, prob, val = agent.choose_action(observation)
 
             obs, reward, terminated, truncated, _ = env.step(action)
-            obs = preprocess_frame(obs)
             n_steps += 1
             score += reward
             done = terminated or truncated
@@ -105,11 +103,9 @@ def train(config):
     for i in range(30):
         total_reward = []
         obs, _ = env.reset()
-        obs = preprocess_frame(obs)
         while True:
             action = agent.choose_action(obs, train_mode=False)
             obs, reward, terminated, truncated, _ = env.step(action)
-            obs = preprocess_frame(obs)
             done = terminated or truncated
             total_reward.append(reward)
             if done:

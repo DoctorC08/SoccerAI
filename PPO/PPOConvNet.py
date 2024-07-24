@@ -62,7 +62,7 @@ class PPOMemory:
     
 # Actor network
 class ActorNetwork(nn.Module):
-    def __init__(self, input_size, n_actions, alpha, n_frame_stack=4, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
+    def __init__(self, input_size, n_actions, alpha, n_frame_stack=1, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
                                                                           'kernal': 3, 'stride': 3, 'padding': 0}):
         super(ActorNetwork, self).__init__()
 
@@ -203,14 +203,13 @@ class CriticNetwork(nn.Module):
         torch.save(self.model, model_path + "_Critic_PPO.pt")
 
 class PPOConvAgent:
-    def __init__(self, input_size, n_actions, n_frame_stack=4, gamma=0.99, alpha=0.003, gae_lambda=0.95, 
+    def __init__(self, input_size, n_actions, n_frame_stack=1, gamma=0.99, alpha=0.003, gae_lambda=0.95, 
                  policy_clip=0.2, batch_size=64, n_epochs=1, fc_config={'conv1': 64, 'conv2': 32, 'linear': 32, 
                     'kernal': 3, 'stride': 3, 'padding': 0}): 
         self.gamma = gamma                      # future discount rewards
         self.policy_clip = policy_clip          # clipping parameter
         self.n_epochs = n_epochs                # n epochs
         self.gae_lambda = gae_lambda            # lambda discount
-        self.n_frame_stack = n_frame_stack
 
         # networks and memory
         self.actor = ActorNetwork(input_size, n_actions, alpha, n_frame_stack=n_frame_stack, fc_config=fc_config)

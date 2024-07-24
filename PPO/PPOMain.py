@@ -3,23 +3,30 @@ import numpy as np
 from PPOConvNet import PPOConvAgent
 from tqdm import tqdm
 import wandb
-import torch
+import time
+import cv2
 
 wandb.login()
 
+def preprocess_frame(frame):
+    # Resize frame
+    frame = cv2.resize(frame, (84, 84))
+    # Normalize pixel values
+    frame = frame / 255.0
+    return frame
 
 
 def train(config):
-
-    env = gym.make("ALE/Tetris-v5", obs_type="grayscale", render_mode="human")
-    env.metadata['render_fps'] = 60
+    env = gym.make("ALE/Tetris-v5", obs_type="grayscale")
+    # env.metadata['render_fps'] = 60
     
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
     n_epochs = config.n_epochs              # n epochs: 10
     alpha = config.lr                       # lr: 0.0003
     n_games = config.n_games                # n games: 300
-    n_frame_stack = config.n_frame_stack    # stacked frames 
+    # n_frame_stack = config.n_frame_stack    # stacked frames 
+    n_frame_stack = 1
 
     fc_config={
         'conv1': config.conv1, 
@@ -49,14 +56,17 @@ def train(config):
     for i in tqdm(range(n_games)):
         observation, _ = env.reset()
         done = False
-        # first_frame = True
         score = 0
         loss = []
+
+        observation = preprocess_frame(observation)
         observation = [observation] * n_frame_stack
+
         while not done:
-            # env.render()
             action, prob, val = agent.choose_action(observation)
+
             obs, reward, terminated, truncated, _ = env.step(action)
+            obs = preprocess_frame(obs)
             n_steps += 1
             score += reward
             done = terminated or truncated
@@ -68,23 +78,25 @@ def train(config):
             if n_steps % N == 0: # update
                 loss.append(agent.learn())
                 learn_iters += 1
-            
             # observation = obs
             # first_frame = False
+        
+
         score_history.append(score)
+
         if (len(score_history) > 100):
             avg_score = np.mean(score_history[-100])
+        
         if avg_score > best_score:
             best_score = avg_score
-            agent.save_models(name=str(i) + "Tetris")
+            agent.save_models(name="Tetris")
 
         print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 
             'time_steps', n_steps, 'learning_steps', learn_iters)
+        
         wandb.log({
             'Score': score, 
             'Average Score': avg_score,
-            'Time steps': n_steps, 
-            'Learning steps': learn_iters, 
             'Total Loss': sum(loss),
             'Average Loss': (sum(loss) / n_steps),
         })
@@ -93,10 +105,11 @@ def train(config):
     for i in range(30):
         total_reward = []
         obs, _ = env.reset()
+        obs = preprocess_frame(obs)
         while True:
-            # env.render()
             action = agent.choose_action(obs, train_mode=False)
             obs, reward, terminated, truncated, _ = env.step(action)
+            obs = preprocess_frame(obs)
             done = terminated or truncated
             total_reward.append(reward)
             if done:
@@ -137,14 +150,14 @@ sweep_configuration = {
         },
         "n_games": {
             "distribution": "int_uniform",
-            "max": 100,
-            "min": 20,
+            "max": 10000,
+            "min": 1000,
         },
-        "n_frame_stack": {
-            "distribution": "int_uniform",
-            "max": 8,
-            "min": 2,
-        }, 
+        # "n_frame_stack": {
+        #     "distribution": "int_uniform",
+        #     "max": 8,
+        #     "min": 2,
+        # }, 
         "conv1": {
             "distribution": "int_uniform",
             "max": 64,
@@ -162,17 +175,17 @@ sweep_configuration = {
         },
         "kernal": {
             "distribution": "int_uniform",
-            "max": 9,
+            "max": 4,
             "min": 3,
         },
         "stride": {
             "distribution": "int_uniform",
-            "max": 9,
+            "max": 4,
             "min": 3,
         },
         "padding": {
             "distribution": "int_uniform",
-            "max": 3,
+            "max": 1,
             "min": 0,
         },
     },

@@ -8,6 +8,7 @@ from torch.distributions.categorical import Categorical
 
 import random
 import math
+import time
 
 global verbose
 verbose = False
@@ -102,7 +103,7 @@ class ActorNetwork(nn.Module):
         size = math.floor((size - fc_config['kernal']) / fc_config['stride'] + 1)
         return size
 
-    def forward(self, state, train_mode=True, first_frame=False): # forward propogation
+    def forward(self, state, train_mode=True): # forward propogation
         # if first_frame:
         #     self.prev_states = [state] * self.n_frame_stack
         # else:
@@ -180,7 +181,7 @@ class CriticNetwork(nn.Module):
         size = math.floor((size - fc_config['kernal']) / fc_config['stride'] + 1)
         return size
 
-    def forward(self, state, first_frame=False): # forward propogation
+    def forward(self, state): # forward propogation
         # if first_frame:
         #     self.prev_states = [state] * self.n_frame_stack
         # else:
@@ -231,20 +232,13 @@ class PPOConvAgent:
         if train_mode: # train mode
             state = torch.FloatTensor(np.array(observation)).unsqueeze(0).to(self.actor.device)
 
-            with torch.no_grad():
-                if first_frame:
-                    dist = self.actor(state, first_frame=True)
-                    value = self.critic(state, first_frame=True)
-                else:
-                    dist = self.actor(state)
-                    value = self.critic(state)
-                action = dist.sample()
-                
+            dist = self.actor(state)
+            value = self.critic(state)
+            action = dist.sample()
 
             probs = dist.log_prob(action).item()
             action = action.item()
             value = value.item()
-
             return action, probs, value
         else: # eval mdoe
             state = torch.FloatTensor(np.array(observation)).unsqueeze(0).to(self.actor.device)

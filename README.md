@@ -1,2 +1,2 @@
 # SoccerAI
-Creating a SoccerAI
+Trying RL maybe for soccer

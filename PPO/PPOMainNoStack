@@ -17,7 +17,7 @@ def train(config):
     env = AtariPreprocessing(env, screen_size=84, scale_obs=True)
     env = RecordVideo(env, 
                       video_folder="/Users/christophermao/Documents/GitHub/SoccerAI/Videos", 
-                      episode_trigger=lambda x: x % 50 == 0, 
+                      episode_trigger=lambda x: x % 500 == 0, 
                       video_length=0,
                       name_prefix=count + "")
     
@@ -25,7 +25,7 @@ def train(config):
     batch_size = config.batch_size          # Batch size: 5
     n_epochs = config.n_epochs              # n epochs: 10
     alpha = config.lr                       # lr: 0.0003
-    n_games = 500                         # n games: 300
+    n_games = 10_000                         # n games: 300
 
     fc_config={
         'conv1': config.conv1, 
@@ -121,18 +121,18 @@ sweep_configuration = {
     "parameters": {
         "N": {
             "distribution": "int_uniform",
-            "max": 100,
-            "min": 20
+            "max": 200,
+            "min": 50
         },
         "batch_size": {
             "distribution": "int_uniform",
-            "max": 100,
-            "min": 20,
+            "max": 500,
+            "min": 100,
         },
         "n_epochs": {
             "distribution": "int_uniform",
-            "max": 20,
-            "min": 5,
+            "max": 10,
+            "min": 1,
         },
         "lr": {
             "distribution": "uniform",

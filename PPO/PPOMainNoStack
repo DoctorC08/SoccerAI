@@ -9,6 +9,8 @@ import wandb
 
 wandb.login()
 
+global count
+count = 0
 
 def train(config):
     env = gym.make("ALE/Tetris-v5", obs_type="grayscale", frameskip=1, render_mode='rgb_array')
@@ -16,7 +18,8 @@ def train(config):
     env = RecordVideo(env, 
                       video_folder="/Users/christophermao/Documents/GitHub/SoccerAI/Videos", 
                       episode_trigger=lambda x: x % 50 == 0, 
-                      video_length=0)
+                      video_length=0,
+                      name_prefix=count + "")
     
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
@@ -103,7 +106,7 @@ def train(config):
             if done:
                 break
         final_reward.append(sum(total_reward))
-
+    count += 1
     return sum(final_reward) / 30
 
     

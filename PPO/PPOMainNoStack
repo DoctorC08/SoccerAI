@@ -6,7 +6,6 @@ import numpy as np
 from PPOConvNet import PPOConvAgent
 from tqdm import tqdm
 import wandb
-import time
 
 wandb.login()
 
@@ -17,13 +16,13 @@ def train(config):
     env = RecordVideo(env, 
                       video_folder="/Users/christophermao/Documents/GitHub/SoccerAI/Videos", 
                       episode_trigger=lambda x: x % 50 == 0, 
-                      video_length=10_000)
+                      video_length=0)
     
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
     n_epochs = config.n_epochs              # n epochs: 10
     alpha = config.lr                       # lr: 0.0003
-    n_games = 1_000                         # n games: 300
+    n_games = 500                         # n games: 300
 
     fc_config={
         'conv1': config.conv1, 
@@ -46,7 +45,8 @@ def train(config):
     n_steps = 0
     agent.actor.train()
     agent.critic.train()
-    for i in tqdm(range(n_games)):
+    prev_step = 0
+    for i in range(n_games):
         observation, _ = env.reset()
         done = False
         score = 0
@@ -80,14 +80,16 @@ def train(config):
             agent.save_models(name="Tetris")
 
         print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 
-            'time_steps', n_steps, 'learning_steps', learn_iters)
-        
+            'time_steps', n_steps - prev_step, 'learning_steps', learn_iters)
         wandb.log({
             'Score': score, 
             'Average Score': avg_score,
+            'Episode Length': n_steps - prev_step,
             'Total Loss': sum(loss),
             'Average Loss': (sum(loss) / n_steps),
         })
+        prev_step = n_steps
+
     
     final_reward = []
     for i in range(30):
@@ -131,7 +133,7 @@ sweep_configuration = {
         },
         "lr": {
             "distribution": "uniform",
-            "max": 0.001,
+            "max": 0.0001,
             "min": 1e-07,
         },
         # "n_games": {

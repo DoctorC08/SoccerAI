@@ -10,17 +10,17 @@ import math
 
 wandb.login()
 
-global count
-count = 0
+counter = 0
 
 def train(config):
+    global counter
     env = gym.make("ALE/Tetris-v5", obs_type="grayscale", frameskip=1, render_mode='rgb_array')
     env = AtariPreprocessing(env, screen_size=84, scale_obs=True)
     env = RecordVideo(env, 
                       video_folder="/Users/christophermao/Documents/GitHub/SoccerAI/Videos", 
                       episode_trigger=lambda x: x % 500 == 0, 
                       video_length=0,
-                      name_prefix=count + "")
+                      name_prefix=str(counter) + "")
     
     N = config.N                            # update agent every N steps: 20
     batch_size = config.batch_size          # Batch size: 5
@@ -51,8 +51,8 @@ def train(config):
     agent.critic.train()
     prev_step = 0
 
-    score_start=0.001
-    score_end = 0.01
+    score_start=0.0001
+    score_end = 0.001
     score_decay = 500
 
     for i in range(n_games):
@@ -67,7 +67,7 @@ def train(config):
             action, prob, val = agent.choose_action(observation)
 
             obs, reward, terminated, truncated, _ = env.step(action)
-            reward += score_end + (score_start - score_end) * math.exp(-1. * n_steps / score_decay)
+            reward += score_end + (score_start - score_end) * math.exp(-1. * (n_steps - prev_step) / score_decay)
             n_steps += 1
             score += reward
             done = terminated or truncated
@@ -113,7 +113,7 @@ def train(config):
             if done:
                 break
         final_reward.append(sum(total_reward))
-    count += 1
+    counter += 1
     return sum(final_reward) / 30
 
     

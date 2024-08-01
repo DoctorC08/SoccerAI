@@ -1,11 +1,12 @@
 import gymnasium as gym
 from gymnasium.wrappers import AtariPreprocessing, RecordVideo
 
-
 import numpy as np
 from PPOConvNet import PPOConvAgent
 from tqdm import tqdm
 import wandb
+
+import math
 
 wandb.login()
 
@@ -49,6 +50,11 @@ def train(config):
     agent.actor.train()
     agent.critic.train()
     prev_step = 0
+
+    score_start=0.001
+    score_end = 0.01
+    score_decay = 500
+
     for i in range(n_games):
         observation, _ = env.reset()
         done = False
@@ -61,6 +67,7 @@ def train(config):
             action, prob, val = agent.choose_action(observation)
 
             obs, reward, terminated, truncated, _ = env.step(action)
+            reward += score_end + (score_start - score_end) * math.exp(-1. * n_steps / score_decay)
             n_steps += 1
             score += reward
             done = terminated or truncated

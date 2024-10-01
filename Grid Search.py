@@ -192,10 +192,3 @@ for eps in e_greedy:
 # check actions
 # Double check env
 
-
-# Colleges
-# U wash
-# NYU
-# Montreal
-# not MIT (only 1 proffessor)
-

@@ -25,6 +25,7 @@ verbose = False
 global reward_verbose
 reward_verbose = False
 
+
 # Pygame stuff for rendering
 field_width = 345
 field_height = 225

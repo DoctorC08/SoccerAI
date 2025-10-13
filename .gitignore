@@ -1,3 +1,52 @@
-# Ignore wandb directory
-wandb/
-Videos/
+# VS Code settings
+.vscode/
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+.ipynb_checkpoints/
+
+# Test and coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# MacOS
+.DS_Store
+
+# Others
+*.sqlite3
+*.db
+*.pot
+*.mo
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+*.~ 

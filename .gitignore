@@ -37,7 +37,7 @@ coverage.xml
 .ipynb_checkpoints/
 
 # MacOS
-.DS_Store
+.DS_Store 
 
 # Others
 *.sqlite3

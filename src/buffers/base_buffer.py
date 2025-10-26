@@ -25,15 +25,6 @@ class BaseBuffer(ABC):
         '''
         pass
 
-    @abstractmethod
-    def compute_returns_and_advantages(self, batch_size: int): 
-        #TODO: Do I even need to compute GAE inside the buffer? Why not just the policy agent class?
-        '''
-        calculate GAE and advantages
-        '''
-        pass
-    
-
     def clear(self) -> None:
         '''
         clear the buffer

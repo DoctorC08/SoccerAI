@@ -31,8 +31,9 @@ class BaseAgent(ABC):
     def _setup_model(self) -> None:
         pass
 
+    #TODO: how can i specify multiple args being passed back
     @abstractmethod
-    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Union[int, torch.Tensor]:
+    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Union[int, torch.Tensor]: 
         pass
 
     @abstractmethod

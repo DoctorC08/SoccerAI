@@ -11,7 +11,9 @@ class NeuralNetwork(torch.nn.Module):
                 ) -> None:
         '''
            Keep final_activation to None unless you want a final activation, 
-           but generally handle this later so forward method can return logits
+           but generally handle this later so forward method can return logits. 
+           
+           Using ReLU activation between layers. 
         '''
         super().__init__()
 

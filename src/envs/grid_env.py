@@ -6,8 +6,10 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-class GridEnv(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
+from mod_base_gym_env import modBaseGymEnv
+
+class GridEnv(modBaseGymEnv):
+    metadata = {"render_modes": [None, "human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, size: int = 5, terminating_step=200, render_mode: str = None) -> None:
         super().__init__()
@@ -47,6 +49,9 @@ class GridEnv(gym.Env):
 
         self.timestep = -1
         self.terminating_step = terminating_step
+
+    def change_render_mode(self, new_render_mode):
+        self.render_mode = new_render_mode
 
     def get_size(self):
         return self.size
@@ -99,7 +104,6 @@ class GridEnv(gym.Env):
             self.render()
         elif self.render_mode == "rgb_array":
             return state, reward, terminated, truncated, info, self.render()
-        
         return state, reward, terminated, truncated, info
     
     def render(self):
@@ -160,7 +164,7 @@ class GridEnv(gym.Env):
         return canvas
 
     def close(self):
-        # Clean up resources if necessary (not needed for this simple text-based rendering)
+        # No cleanup needed
         pass
 
 if __name__ == "__main__":

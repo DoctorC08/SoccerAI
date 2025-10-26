@@ -8,25 +8,31 @@ class BaseBuffer(ABC):
         self.device = device
 
     @abstractmethod
-    def add(self, *args) -> None:
+    def add(self, data: dict) -> None:
         '''
         add a single experience to the buffer
         '''
         pass
 
     @abstractmethod
-    def compute_returns_and_advantages(self, batch_size: int):
+    def sample(self, batch_size: int, clear_buffer: bool = True) -> List[Dict[str, torch.Tensor]]:
+        '''
+        divide buffer into dicts with values len=batch_size and stacks dicts into list
+
+        Args:
+            batch_size: size of each sample
+            clear_buffer: clears buffers after sampling
+        '''
+        pass
+
+    @abstractmethod
+    def compute_returns_and_advantages(self, batch_size: int): 
+        #TODO: Do I even need to compute GAE inside the buffer? Why not just the policy agent class?
         '''
         calculate GAE and advantages
         '''
         pass
     
-    @abstractmethod
-    def sample(self, batch_size: int) -> List[Dict[str, torch.Tensor]]:
-        '''
-        divide buffer into batch_size len dicts and return as list
-        '''
-        pass
 
     def clear(self) -> None:
         '''

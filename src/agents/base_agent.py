@@ -36,9 +36,19 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def update(self) -> Dict[str, float]:
+    def update(self, state, action, reward, done, log_prob=None, identifier=None) -> Dict[str, float]:
         '''
+        Method that will update the models inside of the agent. 
         Must return a dictionary of losses and metrics for the logger
+
+        Args: 
+            state: list of sampled states
+            action: ^^
+            reward: ^^
+            done: ^^
+            log_prob: ^^
+            identifier: specific identification key if multiple updates need to happen on the same step. 
+                Will return metrics with identifier to distinguish multiple updates during same timestep
         '''
         pass
     
@@ -50,4 +60,12 @@ class BaseAgent(ABC):
 
     @abstractmethod
     def load_model(self, filepath: str) -> None:
+        pass
+
+    @abstractmethod
+    def get_models(self) -> torch.nn.Module:
+        pass
+
+    @abstractmethod
+    def get_loss_fns(self) -> torch.nn.Module: 
         pass

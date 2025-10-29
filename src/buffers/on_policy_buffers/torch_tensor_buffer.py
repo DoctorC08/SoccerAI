@@ -1,11 +1,11 @@
 import torch
 from src.buffers.base_buffer import BaseBuffer
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import random
 import numpy as np
 
 class TorchTensorBuffer(BaseBuffer):
-    def __init__(self, max_size: int, device: str) -> None:
+    def __init__(self, max_size: int, device: str, gamma: float = 0.99, gae_lambda: float = 0.95) -> None:
         super().__init__(max_size, device)
 
         # initialize empty memory
@@ -15,99 +15,121 @@ class TorchTensorBuffer(BaseBuffer):
         self.index = 0
 
         self.is_buffer_finalized = False
+        self.is_buffer_full = False
+
+        self.gamma = gamma
+        self.gae_lambda = gae_lambda
 
     def add(self, data: dict) -> None:
         '''
         add a single experience to the buffer
         '''
-        keys = ['state', 'action', 'reward', 'done', 'log_prob']
+        if self.index >= self.max_size:
+            self.is_buffer_full = True
+            return
+        keys = ['state', 'action', 'reward', 'done', 'log_prob', 'value']
         if not self.temp_memory:
             self.temp_memory = {key: [] for key in keys}
-        
-        # TODO: Ensure we have all the keys
-        # if len(data) != len(keys):
-        #     raise ValueError(f"Expected {len(keys)} arguments, got {len(args)}")
 
         for key in data:
             if key in keys: 
                 self.temp_memory[key].append(data[key])
         
         self.is_buffer_finalized = False
-        
-        self.index += 1
-        # TODO: Should I be looping around instead of just going over buffer size? 
-        # Like this? If so should assert that self.max_length % batch_size == 0 ?
-        # self.index = (self.index + 1) % self.max_length
-        # self.n = min(self.n + 1, self.max_length)
-        
-    
-    def is_buffer_full(self):
-        return self.index >= self.max_size
 
-    def finalize_buffer(self) -> None:
+        self.index += 1
+        
+
+    def is_buffer_full(self):
+        return self.is_buffer_full 
+
+    def finalize_buffer(self, next_state_value: float = 0.0) -> None:
         '''
         Convert temp_memory lists to tensors and store in buffer
         '''
-        self.buffer = {key: torch.tensor(value, dtype=torch.float32 if key != 'action' else torch.long, device=self.device) 
-                       for key, value in self.temp_memory.items()}
-        
+        dtype_map = {'action': torch.long, 'done': torch.bool, 
+                     'state': torch.float32, 'reward': torch.float32, 
+                     'log_prob': torch.float32, 'value': torch.float32}
+
+        self.buffer = {}
         for key, value in self.temp_memory.items():
-            if key == 'action' or key == 'done': 
-                self.buffer[key] = torch.tensor(value, dtype=torch.long, device=self.device)
-            else: 
+            if key in dtype_map:
+                self.buffer[key] = torch.tensor(value, dtype=dtype_map[key], device=self.device)
+            else:
+                # Default to float32 if key not recognized
+                print(f"Warning: Key {key} not recognized, defaulting to float32")
                 self.buffer[key] = torch.tensor(value, dtype=torch.float32, device=self.device)
+
         self.temp_memory = {}
+
+        self.compute_returns_and_advantages(next_state_value=next_state_value)
 
         self.is_buffer_finalized = True
 
     def sample(self, batch_size: int, clear_buffer: bool = True) -> List[Dict[str, List]]:
 
         if not self.is_buffer_finalized:
+            print("Finalizing buffer before sampling. Since no final state value passed in, using 0.0 as next_state_value.")
             self.finalize_buffer()
 
-        # Generate random samples from buffer
-        samples = []
-        keys = ['state', 'action', 'reward', 'done', 'log_prob', 'value', 'advantage', 'return']
+        if not self.is_buffer_full: 
+            print("Warning: Sampling from a buffer that is not full.")
 
-        assert self.buffer['advantages'] is not None or \
-            self.buffer['returns'] is not None, \
-                "Calculations for advantageess and returns need to happen before sample call"
+        buffer_size = len(self.buffer['state'])
+        indicies = torch.randperm(buffer_size, device=self.device)
 
-        # Find random indicies
-        indicies = [i for i in range(self.index)]
-        indicies = np.random.choice(indicies, replace=False, size=self.index)
+        minibatches = []
+        for start_idx in range(0, buffer_size, batch_size):
+            end_idx = start_idx + batch_size
+            batch_indices = indicies[start_idx:end_idx]
 
-        sample_index = 0
-        
-        for _ in range(self.index // batch_size):
-            sample_buffer = {i : [] for i in keys}
+            minibatch = {key: value[batch_indices] for key, value in self.buffer.items()}
+            minibatches.append(minibatch)
 
-            for _ in range(batch_size):
-                
-                for key in keys:
-                    sample_buffer[key].append(self.buffer[key][indicies[sample_index]])
 
-                sample_index += 1
-            
-            samples.append(sample_buffer)
-        
-        if not self.is_buffer_full(): 
-            print("Warning: Buffer not full when sampled")
-            print(f"Only at index {self.index} out of maximum size of {self.max_size}")
-        
-        if self.index % batch_size != 0: 
-            print(f"Warning: {self.index % batch_size} data will be missing")
-        
         if clear_buffer:
             self.clear()
 
-        return samples
+        return minibatches
 
+    def compute_returns_and_advantages(self, next_state_value: float = 0.0) -> None: 
+        '''
+        Compute advantages and returns using GAE
+        '''
+        rewards = self.buffer['reward']
+        values = self.buffer['value']
+        dones = self.buffer['done'].float()
+
+        advantages = torch.zeros_like(rewards, device=self.device)
+        returns = torch.zeros_like(rewards, device=self.device)
+        
+        T = rewards.size(0)
+
+        next_value = next_state_value
+        
+        last_return = rewards[-1] + self.gamma * next_value * (1.0 - dones[-1])
+        last_delta = last_return - values[-1]
+
+        advantages[-1] = last_delta
+        returns[-1] = last_return
+
+        for step in reversed(range(T - 1)):
+            delta = rewards[step] + self.gamma * values[step + 1] * (1.0 - dones[step]) - values[step]
+            advantages[step] = delta + self.gamma * self.gae_lambda * (1.0 - dones[step]) * advantages[step + 1]
+            
+            returns[step] = advantages[step] + values[step]
+            
+        self.buffer['advantage'] = advantages
+        self.buffer['return'] = returns
+    
 
     def clear(self): 
         self.temp_memory: Dict[str, list] = {}
         self.buffer: Dict[str, torch.Tensor] = {}
 
         self.index = 0
+        self.is_buffer_full = False
+        self.is_buffer_finalized = False
 
+    
     

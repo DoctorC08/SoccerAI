@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from gymnasium import spaces
 import torch
 from dataclasses import dataclass
-from typing import Dict, Union
+from typing import Dict, Tuple
 
 @dataclass
 class BaseAgent(ABC):
@@ -13,7 +13,6 @@ class BaseAgent(ABC):
     device: torch.device
     
     learning_rate: float
-    gamma: float
     grad_clip: float
     
     train_start: int
@@ -31,9 +30,8 @@ class BaseAgent(ABC):
     def _setup_model(self) -> None:
         pass
 
-    #TODO: how can i specify multiple args being passed back
     @abstractmethod
-    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Union[int, torch.Tensor]: 
+    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Tuple[int, torch.Tensor]: 
         pass
 
     @abstractmethod

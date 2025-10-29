@@ -202,7 +202,7 @@ if __name__ == "__main__":
         elif render_mode == "rgb_array":
             print("Render mode: rgb_array, visual rendering")
             # Create an environment with render_mode="rgb_array"
-            env = GridEnv(size=8, render_mode="rgb_array", terminating_step=15)
+            env = GridEnv(size=8, render_mode="rgb_array", terminating_step=100)
 
             state, info = env.reset()
             done = False        
@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 plt.imshow(frame)
                 plt.axis('off')
                 plt.show(block=False)
-                plt.pause(0.5) # pause to create FPS
+                plt.pause(0.1) # pause to create FPS
                 plt.clf()
 
             env.close()

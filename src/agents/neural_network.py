@@ -19,15 +19,15 @@ class NeuralNetwork(torch.nn.Module):
 
         if isinstance(input_size, tuple):
             # Use numpy's prod to handle any (D,) or (H, W, C) input shape
-            print(f"Warning: input_size is a tuple: {input_size}")
+            # print(f"Warning: input_size is a tuple: {input_size}")
             input_size = int(np.prod(input_size)) 
-            print(f"Warning: had to convert input_size to flat integer: {input_size}")
+            # print(f"Warning: had to convert input_size to flat integer: {input_size}")
             
         # Ensure output_size is a flat integer
         if isinstance(output_size, tuple):
-            print(f"Warning: output_size is a tuple: {output_size}")
+            # print(f"Warning: output_size is a tuple: {output_size}")
             output_size = int(np.prod(output_size))
-            print(f"Warning: had to convert output_size to flat integer: {output_size}")
+            # print(f"Warning: had to convert output_size to flat integer: {output_size}")
 
         layers = []
         try: 

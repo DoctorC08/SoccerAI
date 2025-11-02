@@ -1,4 +1,5 @@
 import math
+import os
 import time
 import torch
 from tqdm import tqdm
@@ -131,7 +132,9 @@ class Trainer:
                 self.eval()
             
             if t % self.model_save_freq == 0 and t > 0:
-                self.agent.save_model(f"{self.model_save_path}/checkpoint_{self.n_update_steps}")
+                if os.path.exists(self.model_save_path) is False:
+                    os.makedirs(self.model_save_path)
+                self.agent.save_model(f"{self.model_save_path}/checkpoint_{self.n_updates}" + self.name)
 
         self.cleanup()
 
@@ -338,7 +341,9 @@ class Trainer:
             self.cur_score = (self.best_model_exp_moving_avg * self.cur_score) + \
                              ((1 - self.best_model_exp_moving_avg) * eval_ep_rews)
             if self.cur_score > self.save_threshold: 
-                self.agent.save_model(f"{self.model_save_path}/BestModel" + self.name)
+                if os.path.exists(self.model_save_path) is False:
+                    os.makedirs(self.model_save_path)
+                self.agent.save_model(f"{self.model_save_path}/" + self.name)
                 self.save_threshold = self.cur_score
 
     def cleanup(self):

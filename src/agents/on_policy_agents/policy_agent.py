@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import Dict, Tuple
 import torch
 
-from ..base_agent import BaseAgent
+from src.agents.base_agent import BaseAgent
 
 @dataclass
 class PolicyAgent(BaseAgent, ABC):
-    entropy_coef: float
+    entropy_coef: float = 0.01
 
     @abstractmethod
     def find_value(self, state: torch.Tensor) -> torch.Tensor:

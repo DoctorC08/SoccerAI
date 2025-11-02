@@ -2,18 +2,18 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import torch
 
-from ..base_agent import BaseAgent
+from src.agents.base_agent import BaseAgent
 
 @dataclass
 class ValueAgent(BaseAgent, ABC):
 
-    epsilon: float
-    epsilon_decay: float
-    epsilon_min: float
+    epsilon: float = .5
+    epsilon_decay: float = 0.95
+    epsilon_min: float = 0.01
 
-    batch_size: int
-    memory_size: int
-    update_target_freq: int
+    batch_size: int = 64
+    memory_size: int = 100_000
+    update_target_freq: int = 100
 
     target_network: torch.nn.Module = None
 

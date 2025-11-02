@@ -5,7 +5,7 @@ import random
 import numpy as np
 
 class TorchTensorBuffer(BaseBuffer):
-    def __init__(self, max_size: int, device: str, gamma: float = 0.99, gae_lambda: float = 0.95) -> None:
+    def __init__(self, max_size: int, device: str, batch_size: int, gamma: float = 0.99, gae_lambda: float = 0.95) -> None:
         super().__init__(max_size, device)
 
         # initialize empty memory
@@ -20,6 +20,15 @@ class TorchTensorBuffer(BaseBuffer):
         self.gamma = gamma
         self.gae_lambda = gae_lambda
 
+        self.batch_size = batch_size
+
+        assert max_size > 0, "max_size must be positive"
+        assert batch_size is not None and batch_size > 0, "batch_size must be positive"
+
+        if max_size % batch_size != 0:
+            print("Warning: max_size is not a multiple of batch_size. Some data may be dropped during sampling.")
+            print("max_size:", max_size, "batch_size:", batch_size)
+
     def add(self, data: dict) -> None:
         '''
         add a single experience to the buffer
@@ -33,6 +42,9 @@ class TorchTensorBuffer(BaseBuffer):
 
         for key in data:
             if key in keys: 
+                # if key == 'log_prob' or key == 'value':
+                #     self.temp_memory[key].append(data[key].item())
+                # else:
                 self.temp_memory[key].append(data[key])
         
         self.is_buffer_finalized = False
@@ -54,7 +66,11 @@ class TorchTensorBuffer(BaseBuffer):
         self.buffer = {}
         for key, value in self.temp_memory.items():
             if key in dtype_map:
-                self.buffer[key] = torch.tensor(value, dtype=dtype_map[key], device=self.device)
+                # print(key, value)
+                if key == 'state':
+                    self.buffer[key] = torch.stack([torch.as_tensor(v, dtype=dtype_map[key], device=self.device) for v in value])
+                else:
+                    self.buffer[key] = torch.tensor(value, dtype=dtype_map[key], device=self.device)
             else:
                 # Default to float32 if key not recognized
                 print(f"Warning: Key {key} not recognized, defaulting to float32")
@@ -66,7 +82,13 @@ class TorchTensorBuffer(BaseBuffer):
 
         self.is_buffer_finalized = True
 
-    def sample(self, batch_size: int, clear_buffer: bool = True) -> List[Dict[str, List]]:
+    def sample(self, batch_size: int = None, clear_buffer: bool = True) -> List[Dict[str, List]]:
+        
+        if batch_size is not None:
+            batch_size = self.batch_size
+        else: 
+            batch_size = self.batch_size
+
 
         if not self.is_buffer_finalized:
             print("Finalizing buffer before sampling. Since no final state value passed in, using 0.0 as next_state_value.")

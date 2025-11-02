@@ -31,11 +31,14 @@ class Trainer:
                 model_save_freq: int = 1000,
                 model_save_path: str = './src/trained_agents/',
                 save_best_model: bool = True,
+                best_model_exp_moving_avg: float = 0.95,
                 log_env_info: bool = False,
                 env_info_fn = None,
                 render_evals = True,
                 fps: int = 5,
             ):
+        
+        self.name = logger_config["name"]
         self.agent = agent
         self.buffer = buffer
         self.env = env
@@ -53,7 +56,9 @@ class Trainer:
         self.eval_freq = eval_freq
         self.save_best_model = save_best_model
         if self.save_best_model:
-            self.highest_rew = -math.inf
+            self.cur_score = 0.0
+            self.best_model_exp_moving_avg = best_model_exp_moving_avg
+            self.save_threshold = -math.inf
 
         self.n_train_step = 0
         self.model_update_freq = model_update_freq
@@ -62,6 +67,7 @@ class Trainer:
         self.model_save_path = model_save_path
 
         self.n_updates = 0
+        self.n_eps = 0
 
         # Determine if on-policy or off-policy agent
         self.is_off_policy = isinstance(self.agent, ValueAgent) 
@@ -70,7 +76,7 @@ class Trainer:
         if self.is_on_policy:
             assert self.batch_size > 0, "Batch size must be positive for on-policy agents"
             assert self.eval_freq > 0, "Evaluation frequency must be positive for on-policy agents"
-            assert self.batch_size <= self.buffer.max_size, "Batch size must be less than or equal to buffer size for on-policy agents"
+            assert self.batch_size <= self.buffer.max_size, f"Batch size must be less than or equal to buffer size for on-policy agents. Current buffer size: {self.buffer.max_size}, batch size: {self.batch_size}"
             assert self.buffer.max_size % self.batch_size == 0, "Buffer size must be multiple of batch size for on-policy agents"
             if isinstance(self.agent, A2CAgent):
                 assert n_epochs == 1, "Number of epochs must be 1 for A2C agents"
@@ -133,9 +139,13 @@ class Trainer:
         print(f"and max training steps {n_steps}")
         print(f"{t} total steps ran")
         print(f"{self.n_train_step} training steps ran")
+        print(f"{self.n_eps} episodes ran")
+        print(f"{self.n_updates} model updates ran")
         print(f"{self.n_update_steps} update steps ran")
 
     def run_step(self):
+        if self.env.render_mode is not None: 
+            self.env.change_render_mode(None)
         if self.ep_rews is None: 
             self.ep_rews = 0
         if self.ep_train_certainty is None:
@@ -169,8 +179,8 @@ class Trainer:
                 "value": state_value.detach().cpu().item(),
             })
             if self.buffer.is_buffer_full:
-                print("Buffer full, finalizing buffer")
-                self.buffer.finalize_buffer(self.agent.find_value(torch.tensor(next_state, dtype=torch.float32).to(self.agent.device)).detach().cpu().item())
+                # print("Buffer full, finalizing buffer")
+                self.buffer.finalize_buffer(self.agent.find_value(next_state.to(self.agent.device)).detach().cpu().item())
                 self.update()
                 self.buffer.clear()
         else: 
@@ -193,15 +203,16 @@ class Trainer:
         self.n_train_step += 1
         # Log episodic values if done
         if done:
+            self.n_eps += 1
             self.logger.log({
                 "train/ep_rewards": self.ep_rews, 
                 "train/terminated": terminated, 
                 "train/ep_certainty": self.ep_train_certainty
-            }, self.n_train_step)
+            }, self.n_eps)
             if self.log_env_info:
                 self.logger.log(
                     self.env_info_fn(self.env_info), 
-                    self.n_train_step
+                    self.n_eps
                 )
                 self.env_info = []
 
@@ -220,6 +231,7 @@ class Trainer:
     def update(self):
         # if self._start_update_time is None: 
         _start_update_time = time.time()
+        cur_updates = 0
 
         if self.is_on_policy:
             # On-policy update
@@ -227,14 +239,15 @@ class Trainer:
             if isinstance(sample_data, list) and isinstance(self.buffer, TorchTensorBuffer):
                 # assuming if sample_data is single list then each item will hold dict with values lists of experiences
                 for i, experience in enumerate(sample_data):
-                    update_metrics = self.agent.update(state=experience['state'], 
-                                                       returns=experience['returns'], 
-                                                       advantages=experience['advantages'], 
-                                                       log_prob=experience['log_prob'], 
+                    update_metrics = self.agent.update(states=experience['state'], 
+                                                       returns=experience['return'], 
+                                                       advantages=experience['advantage'], 
+                                                       actions=experience['action'],
                                                        identifier=i)
                     self.n_updates += 1
+                    cur_updates += 1
 
-                    self.logger.log(update_metrics, self.n_updates)
+                    self.logger.log(update_metrics, self.n_eps)
             else:
                 raise TypeError("Unexpected sample data type during off-policy update or unexpected buffer type")
         elif self.is_off_policy:
@@ -249,18 +262,19 @@ class Trainer:
                     identifier=i
                 )
                 self.n_updates += 1
-                self.logger.log(update_metrics, self.n_updates)
+                cur_updates += 1
+                self.logger.log(update_metrics, self.n_eps)
 
 
         end_update_time = time.time()
-        delta_t = end_update_time - self._start_update_time
+        delta_t = end_update_time - _start_update_time
         self.logger.log(
             {
-                "update/updates_per_sec": self.n_updates / delta_t, 
-                "update/update_frames_per_sec": self.n_updates * self.batch_size / delta_t,
-                "update/num_updates": self.n_updates
+                "update/updates_per_sec": cur_updates / delta_t, 
+                "update/update_frames_per_sec": cur_updates * self.batch_size / delta_t,
+                "update/num_updates": cur_updates
             }, 
-            self.n_train_step
+            self.n_eps
         )
 
     def eval(self):
@@ -292,26 +306,41 @@ class Trainer:
 
         # Reshape eval_renderings to (t, channels, height, width)
         eval_renderings = np.array(eval_renderings)
-        eval_render_T = np.transpose(eval_renderings, (0, 3, 1, 2))
-        wandb_video = wandb.Video(eval_render_T, 
+        if eval_renderings.ndim == 3:
+            # if only single frame, expand dim
+            eval_renderings = np.expand_dims(eval_renderings, axis=0)
+
+        elif eval_renderings.ndim == 2:
+            # If only single grayscale frame, expand dims
+            eval_renderings = np.expand_dims(eval_renderings, axis=-1)
+            eval_renderings = np.expand_dims(eval_renderings, axis=0)
+        if eval_renderings.ndim == 4:
+            eval_render_T = np.transpose(eval_renderings, (0, 3, 1, 2))
+            wandb_video = wandb.Video(eval_render_T, 
                                 fps=self.fps, 
                                 format="mp4", 
-                                caption=f"{self.env.__class__.__name__} Render: Eval at step {self.n_train_step}, \
+                                caption=f"{self.env.__class__.__name__} Render: Eval at episode: {self.n_eps}, \
                                     rew: {eval_ep_rews}")
-
+            self.logger.log({"eval/video": wandb_video}, self.n_eps)
+        elif eval_renderings.ndim == 1:
+            # if no video collected
+            pass
+        else: 
+            print(f"Error: Final rendering array has unexpected dimensions: {eval_renderings.ndim}")
 
         self.logger.log({
-                "eval/video": wandb_video,
                 "eval/ep_rewards": eval_ep_rews, 
                 "eval/ep_certainty": eval_ep_certainty,
                 "eval/length": length
-            }, self.n_train_step) 
+            }, self.n_eps) 
         
         if self.save_best_model:
-            if eval_ep_rews > self.highest_rew: 
-                self.agent.save_model(f"{self.model_save_path}/BestModel")
-                self.highest_rew = eval_ep_rews
-    
+            self.cur_score = (self.best_model_exp_moving_avg * self.cur_score) + \
+                             ((1 - self.best_model_exp_moving_avg) * eval_ep_rews)
+            if self.cur_score > self.save_threshold: 
+                self.agent.save_model(f"{self.model_save_path}/BestModel" + self.name)
+                self.save_threshold = self.cur_score
+
     def cleanup(self):
         self.logger.close()
         self.buffer.clear()

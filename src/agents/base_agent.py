@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from gymnasium import spaces
 import torch
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 @dataclass
 class BaseAgent(ABC):
@@ -15,8 +15,7 @@ class BaseAgent(ABC):
     learning_rate: float
     grad_clip: float
     
-    train_start: int
-    train_step: int = 0
+    train_start: int = 0
     
     training: bool = True
 
@@ -24,8 +23,6 @@ class BaseAgent(ABC):
         self.policy_network = None
         self.optimizer = None
         
-        self._setup_model()
-
     @abstractmethod
     def _setup_model(self) -> None:
         pass
@@ -62,7 +59,7 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def get_models(self) -> torch.nn.Module:
+    def get_models(self) -> List[torch.nn.Module]:
         pass
 
     @abstractmethod

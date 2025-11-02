@@ -6,7 +6,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-from mod_base_gym_env import modBaseGymEnv
+from src.envs.mod_base_gym_env import modBaseGymEnv
 
 class GridEnv(modBaseGymEnv):
     metadata = {"render_modes": [None, "human", "rgb_array"], "render_fps": 4}

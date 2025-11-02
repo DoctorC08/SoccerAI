@@ -299,12 +299,13 @@ class Trainer:
             eval_ep_rews += reward
             eval_ep_certainty += self.calc_certainty(logits)
             length += 1
-            if terminated or truncated:
-                break
 
             if self.render_evals:
                 # Append render to eval_renderings shape: (t, height, width, channels)
                 eval_renderings.append(render)
+
+            if terminated or truncated:
+                break
 
 
         # Reshape eval_renderings to (t, channels, height, width)

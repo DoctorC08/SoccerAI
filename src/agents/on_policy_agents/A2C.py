@@ -129,6 +129,7 @@ class A2CAgent(PolicyAgent):
         print(f"Model loaded from {path}")
         self.policy_network.to(self.device)
         self.critic_network.to(self.device)
+        print(f"Models automatically moved to device: {self.device}")
 
     def get_models(self) -> List[nn.Module]:
         return [self.policy_network, self.critic_network]

@@ -17,6 +17,7 @@ class EnvConfig:
 
 @dataclass
 class LoggerConfig:
+    logger: str = "WandBLogger"
     project: str = "SoccerAI"
     name: str = "DefaultRun"
     reinit: bool = False
@@ -35,6 +36,7 @@ class LoggerConfig:
 
 @dataclass
 class AgentConfig:
+    on_policy: bool = True
     model: str = "A2C"
     policy_network: str = "NeuralNetwork"
     critic_network: str = "NeuralNetwork"
@@ -89,11 +91,15 @@ class TrainingParams:
     eval_freq: int = 100 
     model_update_freq: int = 1000
     n_update_steps: int = 1
+    n_epochs: int = 1
     model_save_freq: int = 1000
     model_save_path: str = './src/trained_agent'
     save_best_model: bool = True
+    best_model_exp_moving_avg: float = 0.99
     log_env_info: bool = False
+    env_info_fn: callable = None
     render_evals: bool = True
+    fps: int = 5
 
     def to_wandb_config(self):
         return {

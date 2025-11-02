@@ -50,3 +50,5 @@ coverage.xml
 *.tmp
 *.orig
 *.~ 
+
+wandb/

@@ -228,7 +228,7 @@ class Trainer:
         '''
         Find "certainty": calculate "certainty" by using entropy H(pi(.|s)) = - sum_a pi(a|s) log pi(a|s)
         '''
-        return -torch.sum(logits * torch.log(logits + 1e-10), dim=-1).item()
+        return -math.exp(logits.item()) * logits.item()
 
 
     def update(self):
@@ -306,7 +306,8 @@ class Trainer:
 
             if terminated or truncated:
                 break
-
+        
+        # print(eval_ep_certainty)
 
         # Reshape eval_renderings to (t, channels, height, width)
         eval_renderings = np.array(eval_renderings)

@@ -87,6 +87,7 @@ class BufferConfig:
 
 @dataclass
 class TrainingParams:
+    total_training_steps: int = 100_000
     batch_size: int = 500
     eval_freq: int = 100 
     model_update_freq: int = 1000

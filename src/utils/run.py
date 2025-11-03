@@ -92,4 +92,4 @@ def run(cfg: Config):
         fps=cfg.training.fps,
     )
 
-    trainer.train(250_000)
+    trainer.train(cfg.training.total_training_steps)

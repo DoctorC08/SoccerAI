@@ -13,7 +13,7 @@ from src.utils.run import run
 
 if __name__ == "__main__":
     # Set WANDB_MODE to "disabled" to disable wandb logging if needed
-    # os.environ["WANDB_MODE"] = "disabled"
+    os.environ["WANDB_MODE"] = "disabled"
 
     wandb.login()
 
@@ -29,7 +29,7 @@ if __name__ == "__main__":
         model = "A2C",
         policy_network = "NeuralNetwork",
         critic_network = "NeuralNetwork",
-        transfer_learning = True, 
+        transfer_learning = False, 
         model_load_path = "src/trained_agents/optimal_policies/5x5Grid_A2C_100kSteps",
         hidden_network_size = [32, 32],
         learning_rate = 0.0005,
@@ -53,6 +53,7 @@ if __name__ == "__main__":
     )
 
     training_params = TrainingParams(
+        total_training_steps = 100_000,
         batch_size = batch_size,
         eval_freq = 500,
         n_update_steps = 1,

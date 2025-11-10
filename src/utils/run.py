@@ -6,7 +6,15 @@ from src.train.trainer import Trainer
 from src.config import Config 
 
 
-def run(cfg: Config):
+def run(cfg: Config, run_eval: int = 0, print_config=False) -> dict | None:
+    '''
+    Run training with the given configuration.
+    Args:
+        cfg (Config): Configuration object containing all parameters.
+        run_eval (int): (0 will skip evaluation) Number of evaluation episodes to run after training. 
+    Returns:
+        dict | None: Evaluation metrics if run_eval is True, else None.
+    '''
     if cfg.env.env_name == "GridEnv":
         env = GridEnv(
             size = cfg.env.env_size, 
@@ -51,6 +59,8 @@ def run(cfg: Config):
     else:
         raise NotImplementedError("Only on-policy agents are implemented in this example.")
 
+    print("Initializing Agents")
+
     if cfg.agent.model == "A2C":
         agent = A2CAgent(
             state_size = state_size,
@@ -71,12 +81,15 @@ def run(cfg: Config):
         assert cfg.agent.model_load_path != "", "Model load path must be specified for transfer learning."
         agent.load_model(cfg.agent.model_load_path)
 
+    print("Initializing Trainer")
+
     trainer = Trainer(
         agent=agent, 
         buffer=buffer, 
         env=env,
         logger_config=cfg.logger.logger_config, 
         logger=cfg.logger.logger,
+        logger_save_freq=cfg.logger.logger_save_freq,
         batch_size=cfg.training.batch_size, 
         eval_freq=cfg.training.eval_freq, 
         model_update_freq=cfg.training.model_update_freq, 
@@ -92,4 +105,7 @@ def run(cfg: Config):
         fps=cfg.training.fps,
     )
 
-    trainer.train(cfg.training.total_training_steps)
+    if print_config:
+        print(cfg)
+
+    trainer.train(cfg.training.total_training_steps, run_eval=run_eval)

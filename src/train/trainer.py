@@ -24,6 +24,7 @@ class Trainer:
                 env: modBaseGymEnv, # Custom modified base gym
                 logger_config: dict, 
                 logger: str = "WandBLogger",
+                logger_save_freq: int = 1, 
                 batch_size: int = 0,
                 eval_freq: int = 0,
                 model_update_freq: int = 1, # Only use for off-policy agents
@@ -49,6 +50,7 @@ class Trainer:
                 name = logger_config["name"], 
                 config = logger_config["config"], 
                 reinit = logger_config["reinit"],
+                sweep = logger_config["sweep"],
             )
         else: 
             raise LookupError(f"Unknown logger inputed: {logger}")
@@ -92,6 +94,8 @@ class Trainer:
 
 
         self.init_logger()
+        self.logger_save_freq = logger_save_freq
+        self.logger_train_update_speed = 0
 
         self._state = None
         self.ep_rews = 0.0 
@@ -121,7 +125,7 @@ class Trainer:
         for i, (model, loss_fn) in enumerate(zipped_data):
             self.logger.watch_model(model, criterion=loss_fn, idx=i)
     
-    def train(self, n_steps: int) -> None: 
+    def train(self, n_steps: int, run_eval: int = 0) -> None: 
         for t in tqdm(range(n_steps)): 
             self.run_step()
 
@@ -135,6 +139,20 @@ class Trainer:
                 if os.path.exists(self.model_save_path) is False:
                     os.makedirs(self.model_save_path)
                 self.agent.save_model(f"{self.model_save_path}/checkpoint_{self.n_updates}" + self.name)
+
+        if run_eval: 
+            eval_metrics = {}
+            for _ in range(run_eval):
+                cur_metrics = self.eval(log=False, return_eval_metrics=True)
+                for key, value in cur_metrics.items():
+                    eval_metrics[key] = eval_metrics.get(key, 0) + value
+
+            # average values
+            for key in eval_metrics.keys():
+                eval_metrics[key] /= run_eval
+            print("Eval metrics:", eval_metrics)
+        
+        self.logger.log(eval_metrics)
 
         self.cleanup()
 
@@ -207,17 +225,31 @@ class Trainer:
         # Log episodic values if done
         if done:
             self.n_eps += 1
-            self.logger.log({
-                "train/ep_rewards": self.ep_rews, 
-                "train/terminated": terminated, 
-                "train/ep_certainty": self.ep_train_certainty
-            }, self.n_eps)
-            if self.log_env_info:
-                self.logger.log(
-                    self.env_info_fn(self.env_info), 
+            if self.n_eps % self.logger_save_freq == 0: 
+                cur_time = time.time()
+                
+                
+                if self.log_env_info:
+                    self.logger.log({
+                        "train/ep_rewards": self.ep_rews, 
+                        "train/terminated": terminated, 
+                        "train/ep_certainty": self.ep_train_certainty,
+                        "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
+                        "train/env_info": self.env_info_fn(self.env_info), 
+                        }, self.n_eps
+                    )
+                    self.env_info = []
+                else: 
+                    self.logger.log({
+                        "train/ep_rewards": self.ep_rews, 
+                        "train/terminated": terminated, 
+                        "train/ep_certainty": self.ep_train_certainty,
+                        "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
+                    }, 
                     self.n_eps
-                )
-                self.env_info = []
+                    )
+                
+                self.logger_train_update_speed = cur_time
 
             # reset values
             self.ep_rews = 0
@@ -250,7 +282,7 @@ class Trainer:
                     self.n_updates += 1
                     cur_updates += 1
 
-                    self.logger.log(update_metrics, self.n_eps)
+                    # self.logger.log(update_metrics, self.n_eps)
             else:
                 raise TypeError("Unexpected sample data type during off-policy update or unexpected buffer type")
         elif self.is_off_policy:
@@ -266,21 +298,22 @@ class Trainer:
                 )
                 self.n_updates += 1
                 cur_updates += 1
-                self.logger.log(update_metrics, self.n_eps)
+                # self.logger.log(update_metrics, self.n_eps)
 
 
         end_update_time = time.time()
         delta_t = end_update_time - _start_update_time
+        update_metric_speeds = {
+            "update/updates_per_sec": cur_updates / delta_t, 
+            "update/update_frames_per_sec": cur_updates * self.batch_size / delta_t,
+            "update/num_updates": cur_updates
+        }
         self.logger.log(
-            {
-                "update/updates_per_sec": cur_updates / delta_t, 
-                "update/update_frames_per_sec": cur_updates * self.batch_size / delta_t,
-                "update/num_updates": cur_updates
-            }, 
+            update_metrics | update_metric_speeds, 
             self.n_eps
         )
 
-    def eval(self):
+    def eval(self, log=True, return_eval_metrics=False):
         if self.render_evals:
             self.env.change_render_mode('rgb_array')
         state, _ = self.env.reset()
@@ -307,37 +340,37 @@ class Trainer:
             if terminated or truncated:
                 break
         
-        # print(eval_ep_certainty)
 
         # Reshape eval_renderings to (t, channels, height, width)
-        eval_renderings = np.array(eval_renderings)
-        if eval_renderings.ndim == 3:
-            # if only single frame, expand dim
-            eval_renderings = np.expand_dims(eval_renderings, axis=0)
+        if log: 
+            eval_renderings = np.array(eval_renderings)
+            if eval_renderings.ndim == 3:
+                # if only single frame, expand dim
+                eval_renderings = np.expand_dims(eval_renderings, axis=0)
 
-        elif eval_renderings.ndim == 2:
-            # If only single grayscale frame, expand dims
-            eval_renderings = np.expand_dims(eval_renderings, axis=-1)
-            eval_renderings = np.expand_dims(eval_renderings, axis=0)
-        if eval_renderings.ndim == 4:
-            eval_render_T = np.transpose(eval_renderings, (0, 3, 1, 2))
-            wandb_video = wandb.Video(eval_render_T, 
-                                fps=self.fps, 
-                                format="mp4", 
-                                caption=f"{self.env.__class__.__name__} Render: Eval at episode: {self.n_eps}, \
-                                    rew: {eval_ep_rews}")
-            self.logger.log({"eval/video": wandb_video}, self.n_eps)
-        elif eval_renderings.ndim == 1:
-            # if no video collected
-            pass
-        else: 
-            print(f"Error: Final rendering array has unexpected dimensions: {eval_renderings.ndim}")
+            elif eval_renderings.ndim == 2:
+                # If only single grayscale frame, expand dims
+                eval_renderings = np.expand_dims(eval_renderings, axis=-1)
+                eval_renderings = np.expand_dims(eval_renderings, axis=0)
+            if eval_renderings.ndim == 4:
+                eval_render_T = np.transpose(eval_renderings, (0, 3, 1, 2))
+                wandb_video = wandb.Video(eval_render_T, 
+                                    fps=self.fps, 
+                                    format="mp4", 
+                                    caption=f"{self.env.__class__.__name__} Render: Eval at episode: {self.n_eps}, \
+                                        rew: {eval_ep_rews}")
+                self.logger.log({"eval/video": wandb_video}, self.n_eps)
+            elif eval_renderings.ndim == 1:
+                # if no video collected
+                pass
+            else: 
+                print(f"Error: Final rendering array has unexpected dimensions: {eval_renderings.ndim}")
 
-        self.logger.log({
-                "eval/ep_rewards": eval_ep_rews, 
-                "eval/ep_certainty": eval_ep_certainty,
-                "eval/length": length
-            }, self.n_eps) 
+            self.logger.log({
+                    "eval/ep_rewards": eval_ep_rews, 
+                    "eval/ep_certainty": eval_ep_certainty,
+                    "eval/length": length
+                }, self.n_eps) 
         
         if self.save_best_model:
             self.cur_score = (self.best_model_exp_moving_avg * self.cur_score) + \
@@ -347,6 +380,12 @@ class Trainer:
                     os.makedirs(self.model_save_path)
                 self.agent.save_model(f"{self.model_save_path}/" + self.name)
                 self.save_threshold = self.cur_score
+        if return_eval_metrics:
+            return {
+                "final/ep_rewards": eval_ep_rews, 
+                "final/ep_certainty": eval_ep_certainty,
+                "final/length": length
+            }
 
     def cleanup(self):
         self.logger.close()

@@ -11,7 +11,7 @@ from src.envs.mod_base_gym_env import modBaseGymEnv
 class GridEnv(modBaseGymEnv):
     metadata = {"render_modes": [None, "human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, size: int = 5, terminating_step=200, render_mode: str = None) -> None:
+    def __init__(self, size: int = 5, terminating_step: int = 200, render_mode: str = None) -> None:
         super().__init__()
         self.size = size
         self.render_mode = render_mode

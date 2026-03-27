@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
-// Run this cmd to build: c++ -O3 -Wall -shared -std=c++17 -undefined dynamic_lookup $(python3 -m pybind11 --includes) src/envs/soccer_envs/soccer_env.cpp -o soccer_sim$(python3-config --extension-suffix)
+// Run this cmd to build: c++ -O3 -Wall -shared -std=c++17 -undefined dynamic_lookup $(python3 -m pybind11 --includes) src/envs/soccer_envs/soccer_env.cpp -o src/envs/soccer_envs/soccer_sim$(python3-config --extension-suffix)
 
 namespace py = pybind11;
 
@@ -19,21 +19,49 @@ struct Entity {
 class SoccerEnv {
 public:
     std::vector<Entity> entities;
-    float width, height, dt;
+    float width, height, dt, goal_size;
     int num_team_a, num_team_b;
     int steps = 0;
     const int max_steps = 1000;
-    const float kick_range = 2.0f;
-    float top_speed = 5.0f;
-    float accel = 0.5f;
     
+    // Configurable parameters
+    float kick_range;
+    float top_speed;
+    float accel;
+    float kick_force;
+    float ball_restitution;
+    float player_restitution;
+    float friction;
+    float goal_bonus;
+    float step_penalty;
+    float ball_move_weight;
+    float player_move_weight;
+    float contact_reward;
+    float out_of_bounds_penalty;
+    float kick_reward_weight;
+
     // Track previous state for reward calculation
+    float dist_ball_to_goal_a = 0;
+    float dist_ball_to_goal_b = 0;
+    float dist_to_ball = 0;
+
     float prev_ball_dist_to_goal_b = 0;
     float prev_ball_dist_to_goal_a = 0;
     std::vector<float> prev_player_ball_distances;
+    std::vector<float> last_kick_rewards = {0.0f, 0.0f};
 
-    SoccerEnv(int num_a, int num_b, float w, float h, float time_step) 
-        : width(w), height(h), dt(time_step), num_team_a(num_a), num_team_b(num_b) {
+    SoccerEnv(int num_a, int num_b, float w = 80.0, float h = 40.0, float time_step = 0.1, float g_size = 20.0f,
+              float kr = 2.0f, float ts = 5.0f, float ac = 0.5f, float kf = 20.0f,
+              float br = 0.9f, float pr = 0.2f, float fric = 0.8f,
+              float gb = 10.0f, float sp = -0.1f, float bmw = 0.5f,
+              float pmw = 0.2f, float cr = 0.1f, float obp = -1.0f, float krw = 2.0f)
+        : width(w), height(h), dt(time_step), goal_size(g_size), 
+          num_team_a(num_a), num_team_b(num_b),
+          kick_range(kr), top_speed(ts), accel(ac), kick_force(kf),
+          ball_restitution(br), player_restitution(pr), friction(fric),
+          goal_bonus(gb), step_penalty(sp), ball_move_weight(bmw),
+          player_move_weight(pmw), contact_reward(cr), out_of_bounds_penalty(obp), 
+          kick_reward_weight(krw) {
         reset();
     }
 
@@ -53,17 +81,23 @@ public:
             entities.push_back({3 * width / 4, y, 0, 0, 1.0f, 1.0f, PLAYER_B, i});
         }
         
-        update_distance_tracking();
+        reset_distance_tracking();
     }
 
-    std::vector<float> step(std::vector<int> actions) {
+    bool is_in_goal_range(float y) {
+        float goal_top = (height + goal_size) / 2.0f;
+        float goal_bottom = (height - goal_size) / 2.0f;
+        return (y >= goal_bottom && y <= goal_top);
+    }
+
+    void step(std::vector<int> actions) {
+        update_prev_state();
         apply_actions(actions);
         update_positions();
         handle_collisions();
         check_goals();
+        
         steps++;
-
-        return get_rewards();
     }
 
     std::vector<float> get_state() {
@@ -75,14 +109,70 @@ public:
             state.push_back(entity.vy / top_speed);
         }
         return state;
+    } 
+
+    std::vector<float> get_rewards() {
+        std::vector<float> rewards(2, 0.0f);
+        Entity& ball = entities[0];
+        
+        float goal_a_x = 0, goal_a_y = height / 2.0f;
+        float goal_b_x = width, goal_b_y = height / 2.0f;
+
+        dist_ball_to_goal_a = std::hypot(ball.x - goal_a_x, ball.y - goal_a_y);
+        dist_ball_to_goal_b = std::hypot(ball.x - goal_b_x, ball.y - goal_b_y);
+        
+        // Goal Reward
+        if (ball.x <= 0 && is_in_goal_range(ball.y)) rewards[1] += goal_bonus;
+        if (ball.x >= width && is_in_goal_range(ball.y)) rewards[0] += goal_bonus;
+
+        // Ball approach to opponent goal reward
+        rewards[0] += (prev_ball_dist_to_goal_b - dist_ball_to_goal_b) * ball_move_weight;
+        rewards[1] += (prev_ball_dist_to_goal_a - dist_ball_to_goal_a) * ball_move_weight;
+
+
+        // Kick rewards
+        rewards[0] += last_kick_rewards[0];
+        rewards[1] += last_kick_rewards[1];
+
+        // Player-ball distance and touch rewards
+        for (size_t i = 1; i < entities.size(); ++i) {
+            Entity& p = entities[i];
+            int team_idx = (p.type == PLAYER_A) ? 0 : 1;
+            
+            dist_to_ball = std::hypot(p.x - ball.x, p.y - ball.y);
+            size_t p_idx = i - 1;
+
+            float diff = prev_player_ball_distances[p_idx] - dist_to_ball;
+            rewards[team_idx] += diff * player_move_weight;
+            // printf("team idx: %d\n", team_idx);
+            // printf("Player %d distance to ball: %.2f, reward: %.3f\n", p.id, dist_to_ball, diff * player_move_weight);
+            // printf("rewards: %.3f\n\n", rewards[team_idx]);
+
+            if (dist_to_ball < p.radius + ball.radius + 0.1f) {
+                float velocity_dir = ball.vx * (team_idx == 0 ? 1 : -1);
+                if (velocity_dir > 0) {
+                    rewards[team_idx] += contact_reward * (velocity_dir / top_speed);
+                }
+            }
+
+            rewards[team_idx] += step_penalty; // Constant pressure to finish
+            if (p.x <= p.radius + 0.1 || p.x >= width - p.radius - 0.1 || p.y <= p.radius + 0.1 || p.y >= height - p.radius - 0.1) {
+                rewards[team_idx] += out_of_bounds_penalty;
+            }
+        }
+
+        return rewards;
     }
 
     bool is_done() {
-        return steps >= max_steps;
+        Entity& ball = entities[0];
+        bool scored = (ball.x <= 0 || ball.x >= width) && is_in_goal_range(ball.y);
+        return steps >= max_steps || scored;
     }
 
 private:
     void apply_actions(std::vector<int>& actions) {
+        last_kick_rewards = {0.0f, 0.0f};
         for (size_t i = 1; i < entities.size(); ++i) {
             if (i - 1 < actions.size()) {
                 int action = actions[i - 1];
@@ -99,10 +189,24 @@ private:
                         float dist = dx * dx + dy * dy;
 
                         if (dist < kick_range * kick_range) {
-                            float kick_force = 10.0f;
-                            float dist = std::sqrt(dist);
+                            int team_idx = (entities[i].type == PLAYER_A) ? 0 : 1;
+                            dist = std::sqrt(dist);
                             ball.vx += (dx / dist) * kick_force;
                             ball.vy += (dy / dist) * kick_force;
+
+                            float target_goal_x = (team_idx == 0) ? width : 0;
+                            float target_goal_y = height / 2.0f;
+                            
+                            float to_goal_x = target_goal_x - ball.x;
+                            float to_goal_y = target_goal_y - ball.y;
+                            float dist_to_goal = std::hypot(to_goal_x, to_goal_y);
+
+                            // Dot product between kick direction and vector to goal
+                            float dot = ((dx / dist) * (to_goal_x / dist_to_goal)) + 
+                                        ((dy / dist) * (to_goal_y / dist_to_goal));
+
+                            // Reward proportional to how well aimed the kick is (max 1.0)
+                            last_kick_rewards[team_idx] += dot * kick_reward_weight; // Scale bonus as needed
                         }
                         break;
                     }
@@ -118,35 +222,41 @@ private:
             entity.x += entity.vx * dt;
             entity.y += entity.vy * dt;
 
-            entity.vx *= 0.95f;
-            entity.vy *= 0.95f;
+            entity.vx *= friction;
+            entity.vy *= friction;
             
             handle_boundaries(entity);
         }
     }
 
     void handle_boundaries(Entity& entity) {
-        bool in_goal_height = (entity.y > height * 0.3f && entity.y < height * 0.7f);
+        bool in_goal_y = is_in_goal_range(entity.y);
         
         if (entity.x - entity.radius < 0) {
-            entity.x = entity.radius;
-            if (entity.type == BALL && !in_goal_height) entity.vx = -entity.vx * 0.8f;
-            else entity.vx = 0;
+            if (entity.type == BALL && in_goal_y) {
+                // Let ball pass and trigger goal
+            } else {
+                entity.x = entity.radius;
+                entity.vx *= -0.8f; 
+            }
         }
+
         if (entity.x + entity.radius > width) {
-            entity.x = width - entity.radius;
-            if (entity.type == BALL && !in_goal_height) entity.vx = -entity.vx * 0.8f;
-            else entity.vx = 0;
+            if (entity.type == BALL && in_goal_y) {
+                // Let ball pass and trigger goal
+            } else {
+                entity.x = width - entity.radius;
+                entity.vx *= -0.8f;
+            }
         }
+
         if (entity.y - entity.radius < 0) {
             entity.y = entity.radius;
-            if (entity.type != BALL) entity.vy = 0;
-            else entity.vy = -entity.vy * 0.8f;
+            entity.vy *= -0.8f;
         }
         if (entity.y + entity.radius > height) {
             entity.y = height - entity.radius;
-            if (entity.type != BALL) entity.vy = 0;
-            else entity.vy = -entity.vy * 0.8f;
+            entity.vy *= -0.8f;
         }
     }
 
@@ -166,7 +276,7 @@ private:
 
         if (dist_sq < radius_sum * radius_sum) {
             float dist = std::sqrt(dist_sq);
-            if (dist == 0) return;
+            if (dist < 1e-6f) return;
 
             float overlap = 0.5f * (radius_sum - dist);
             float nx = dx / dist;
@@ -183,7 +293,7 @@ private:
 
             if (vel_along_normal > 0) return;
 
-            float restitution = (a.type == BALL || b.type == BALL) ? 0.9f : 0.2f;
+            float restitution = (a.type == BALL || b.type == BALL) ? ball_restitution : player_restitution;
             float j_impulse = -(1.0f + restitution) * vel_along_normal;
             j_impulse /= (1.0f / a.mass + 1.0f / b.mass);
 
@@ -197,114 +307,60 @@ private:
     void check_goals() {
         Entity& ball = entities[0];
         
-        if (ball.x < 0 && ball.y > height * 0.3f && ball.y < height * 0.7f) {
-            steps = max_steps;
-        }
-        if (ball.x > width && ball.y > height * 0.3f && ball.y < height * 0.7f) {
+        if ((ball.x <= 0 || ball.x >= width) && is_in_goal_range(ball.y)) {
             steps = max_steps;
         }
     }
-
-    void update_distance_tracking() {
+    
+    void update_prev_state() {
         Entity& ball = entities[0];
-        prev_ball_dist_to_goal_b = std::abs(ball.x - width);
-        prev_ball_dist_to_goal_a = std::abs(ball.x);
+        prev_ball_dist_to_goal_a = std::hypot(ball.x - 0, ball.y - (height / 2.0f));
+        prev_ball_dist_to_goal_b = std::hypot(ball.x - width, ball.y - (height / 2.0f));
         
-        prev_player_ball_distances.clear();
         for (size_t i = 1; i < entities.size(); ++i) {
-            float dx = entities[i].x - ball.x;
-            float dy = entities[i].y - ball.y;
-            prev_player_ball_distances.push_back(std::sqrt(dx * dx + dy * dy));
+            prev_player_ball_distances[i-1] = std::hypot(entities[i].x - ball.x, entities[i].y - ball.y);
         }
     }
 
-    std::vector<float> get_rewards() {
-        std::vector<float> rewards(2, 0.0f);
+    void reset_distance_tracking() {
         Entity& ball = entities[0];
+        // Goal A is at x=0, Goal B is at x=width
+        prev_ball_dist_to_goal_a = std::hypot(ball.x - 0, ball.y - (height / 2.0f));
+        prev_ball_dist_to_goal_b = std::hypot(ball.x - width, ball.y - (height / 2.0f));
         
-        const float goal_bonus = 10.0f;
-        const float step_penalty = -0.1f;
-        const float boundary_penalty = -0.5f;
-        const float ball_approach_reward = 0.1f;
-        const float touch_reward = 0.1f;
-
-        // Check for goals and assign rewards
-        if (ball.x < 0 && ball.y > height * 0.3f && ball.y < height * 0.7f) {
-            rewards[1] += goal_bonus;
-        }
-        if (ball.x > width && ball.y > height * 0.3f && ball.y < height * 0.7f) {
-            rewards[0] += goal_bonus;
-        }
-
-        // Base step penalty
-        rewards[0] += step_penalty;
-        rewards[1] += step_penalty;
-
-        // Ball approach to opponent goal reward
-        float curr_dist_to_goal_b = std::abs(ball.x - width);
-        float curr_dist_to_goal_a = std::abs(ball.x);
-        
-        if (curr_dist_to_goal_b < prev_ball_dist_to_goal_b) {
-            rewards[0] += ball_approach_reward;
-        }
-        if (curr_dist_to_goal_a < prev_ball_dist_to_goal_a) {
-            rewards[1] += ball_approach_reward;
-        }
-        
-        prev_ball_dist_to_goal_b = curr_dist_to_goal_b;
-        prev_ball_dist_to_goal_a = curr_dist_to_goal_a;
-
-        // Player-ball distance and touch rewards
+        prev_player_ball_distances.assign(entities.size() - 1, 0.0f);
         for (size_t i = 1; i < entities.size(); ++i) {
-            float dx = entities[i].x - ball.x;
-            float dy = entities[i].y - ball.y;
-            float curr_dist = std::sqrt(dx * dx + dy * dy);
-            size_t player_idx = i - 1;
-            
-            if (player_idx < prev_player_ball_distances.size()) {
-                // Reward for getting closer to ball
-                if (curr_dist < prev_player_ball_distances[player_idx]) {
-                    if (entities[i].type == PLAYER_A) {
-                        rewards[0] += ball_approach_reward * 0.5f;
-                    } else {
-                        rewards[1] += ball_approach_reward * 0.5f;
-                    }
-                }
-                
-                // Bonus for touching the ball
-                if (curr_dist < entities[i].radius + ball.radius) {
-                    if (entities[i].type == PLAYER_A) {
-                        rewards[0] += touch_reward;
-                    } else {
-                        rewards[1] += touch_reward;
-                    }
-                }
-                
-                prev_player_ball_distances[player_idx] = curr_dist;
-            }
+            prev_player_ball_distances[i-1] = std::hypot(entities[i].x - ball.x, entities[i].y - ball.y);
         }
-
-        // Boundary hit penalty for players
-        for (size_t i = 1; i < entities.size(); ++i) {
-            if ((entities[i].x - entities[i].radius <= 0 || entities[i].x + entities[i].radius >= width ||
-                 entities[i].y - entities[i].radius <= 0 || entities[i].y + entities[i].radius >= height)) {
-                if (entities[i].type == PLAYER_A) {
-                    rewards[0] += boundary_penalty;
-                } else {
-                    rewards[1] += boundary_penalty;
-                }
-            }
-        }
-
-        return rewards;
     }
 };
 
 PYBIND11_MODULE(soccer_sim, m) {
     py::class_<SoccerEnv>(m, "SoccerEnv")
-        .def(py::init<int, int, float, float, float>())
+        .def(py::init<int, int, float, float, float, float, float, float, float, 
+                      float, float, float, float, float, float, float, float, float, float>(),
+             py::arg("num_a"), 
+             py::arg("num_b"), 
+             py::arg("w") = 80.0f, 
+             py::arg("h") = 40.0f, 
+             py::arg("time_step") = 0.1f, 
+             py::arg("g_size") = 20.0f,
+             py::arg("kr") = 2.0f, 
+             py::arg("ts") = 5.0f, 
+             py::arg("ac") = 0.5f, 
+             py::arg("kf") = 20.0f,
+             py::arg("br") = 0.9f, 
+             py::arg("pr") = 0.2f, 
+             py::arg("fric") = 0.8f,
+             py::arg("gb") = 10.0f, 
+             py::arg("sp") = -0.1f, 
+             py::arg("bmw") = 0.5f,
+             py::arg("pmw") = 0.2f, 
+             py::arg("cr") = 0.1f, 
+             py::arg("obp") = -10.0f)
         .def("step", &SoccerEnv::step)
         .def("reset", &SoccerEnv::reset)
         .def("get_state", &SoccerEnv::get_state)
-        .def("is_done", &SoccerEnv::is_done);
+        .def("is_done", &SoccerEnv::is_done)
+        .def("get_rewards", &SoccerEnv::get_rewards);
 }

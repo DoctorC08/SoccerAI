@@ -17,7 +17,9 @@ from src.agents.off_policy_agents.value_agent import ValueAgent
 from src.agents.on_policy_agents.policy_agent import PolicyAgent
 from src.agents.on_policy_agents.A2C import A2CAgent
 
-class Trainer:
+from src.train.base_trainer import BaseTrainer
+
+class Trainer(BaseTrainer):
     def __init__(self, 
                 agent: BaseAgent, 
                 buffer: BaseBuffer,

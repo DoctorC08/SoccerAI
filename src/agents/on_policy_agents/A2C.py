@@ -55,8 +55,12 @@ class A2CAgent(PolicyAgent):
             print("Critic Network:", self.critic_network)
 
     def select_action(self, state: torch.Tensor, is_training: bool = True) -> Tuple[int, torch.Tensor]:
-        state = state.to(self.device)
+        state = state.to(self.device, dtype=torch.float32)
+        if state.ndim == 0:
+            state = state.unsqueeze(0)
         logits = self.policy_network(state)
+        if logits.ndim > 1 and logits.shape[0] == 1:
+            logits = logits.squeeze(0)
         action_dist = torch.distributions.Categorical(logits=logits)
         if is_training:
             action = action_dist.sample() 

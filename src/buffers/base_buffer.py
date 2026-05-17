@@ -6,6 +6,7 @@ class BaseBuffer(ABC):
     def __init__(self, max_size: int, device: str) -> None:
         self.max_size = max_size
         self.device = device
+        self.is_buffer_finalized = False
 
     @abstractmethod
     def add(self, data: dict) -> None:

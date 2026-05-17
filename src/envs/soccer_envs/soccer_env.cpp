@@ -3,8 +3,9 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <random>
 
-// Run this cmd to build: c++ -O3 -Wall -shared -std=c++17 -undefined dynamic_lookup $(python3 -m pybind11 --includes) src/envs/soccer_envs/soccer_env.cpp -o src/envs/soccer_envs/soccer_sim$(python3-config --extension-suffix)
+// Run this cmd to build: c++ -O3 -Wall -shared -std=c++17 -undefined dynamic_lookup $(python3 -m pybind11 --includes) src/envs/soccer_envs/soccer_env.cpp -o src/envs/soccer_envs/soccer_sim.so
 
 namespace py = pybind11;
 
@@ -22,7 +23,6 @@ public:
     float width, height, dt, goal_size;
     int num_team_a, num_team_b;
     int steps = 0;
-    const int max_steps = 1000;
     
     // Configurable parameters
     float kick_range;
@@ -39,6 +39,10 @@ public:
     float contact_reward;
     float out_of_bounds_penalty;
     float kick_reward_weight;
+    int max_steps;
+    bool random_ball_placement;
+
+    std::mt19937 rng;
 
     // Track previous state for reward calculation
     float dist_ball_to_goal_a = 0;
@@ -54,22 +58,33 @@ public:
               float kr = 2.0f, float ts = 5.0f, float ac = 0.5f, float kf = 20.0f,
               float br = 0.9f, float pr = 0.2f, float fric = 0.8f,
               float gb = 10.0f, float sp = -0.1f, float bmw = 0.5f,
-              float pmw = 0.2f, float cr = 0.1f, float obp = -1.0f, float krw = 2.0f)
+              float pmw = 0.2f, float cr = 0.1f, float obp = -1.0f, 
+              float krw = 2.0f, int max_steps = 1000, bool random_ball_spawn = false)
         : width(w), height(h), dt(time_step), goal_size(g_size), 
           num_team_a(num_a), num_team_b(num_b),
           kick_range(kr), top_speed(ts), accel(ac), kick_force(kf),
           ball_restitution(br), player_restitution(pr), friction(fric),
           goal_bonus(gb), step_penalty(sp), ball_move_weight(bmw),
           player_move_weight(pmw), contact_reward(cr), out_of_bounds_penalty(obp), 
-          kick_reward_weight(krw) {
-        reset();
-    }
+          kick_reward_weight(krw), max_steps(max_steps), random_ball_placement(random_ball_spawn),
+          rng(std::random_device{}()) {
+                reset();
+            }
 
     void reset() {
         entities.clear();
         steps = 0;
         
-        entities.push_back({width / 2, height / 2, 0, 0, 0.5f, 0.05f, BALL, 0});
+        float ball_x = width / 2.0f;
+        float ball_y = height / 2.0f;
+        if (random_ball_placement) {
+            // Spawn in middle 50% of field dimensions.
+            std::uniform_real_distribution<float> x_dist(width * 0.25f, width * 0.75f);
+            std::uniform_real_distribution<float> y_dist(height * 0.25f, height * 0.75f);
+            ball_x = x_dist(rng);
+            ball_y = y_dist(rng);
+        }
+        entities.push_back({ball_x, ball_y, 0, 0, 0.5f, 0.05f, BALL, 0});
 
         for (int i = 0; i < num_team_a; ++i) {
             float y = height / (num_team_a + 1) * (i + 1);
@@ -337,8 +352,8 @@ private:
 
 PYBIND11_MODULE(soccer_sim, m) {
     py::class_<SoccerEnv>(m, "SoccerEnv")
-        .def(py::init<int, int, float, float, float, float, float, float, float, 
-                      float, float, float, float, float, float, float, float, float, float>(),
+        .def(py::init<int, int, float, float, float, float, float, float, float, float,
+                      float, float, float, float, float, float, float, float, float, float, int, bool>(),
              py::arg("num_a"), 
              py::arg("num_b"), 
              py::arg("w") = 80.0f, 
@@ -357,7 +372,10 @@ PYBIND11_MODULE(soccer_sim, m) {
              py::arg("bmw") = 0.5f,
              py::arg("pmw") = 0.2f, 
              py::arg("cr") = 0.1f, 
-             py::arg("obp") = -10.0f)
+            py::arg("obp") = -10.0f,
+            py::arg("krw") = 2.0f,
+            py::arg("max_steps") = 1000,
+            py::arg("random_ball_spawn") = false)
         .def("step", &SoccerEnv::step)
         .def("reset", &SoccerEnv::reset)
         .def("get_state", &SoccerEnv::get_state)

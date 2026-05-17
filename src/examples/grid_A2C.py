@@ -8,7 +8,7 @@ from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
 from src.envs.grid_env import GridEnv
 from src.train.trainer import Trainer
 from src.utils.configs_to_wandb import ConfigsToWandb
-from src.config import Config, EnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig
+from src.utils.config import Config, EnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig
 from src.utils.run import run
 
 if __name__ == "__main__":

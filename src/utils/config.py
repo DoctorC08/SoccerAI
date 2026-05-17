@@ -1,11 +1,60 @@
 from dataclasses import dataclass, field
+from typing import Any
+
+@dataclass
+class TrainerConfig:
+    shared_buffer: bool = True
+    equal_batch_size: bool = True
+    update_same_time: bool = True
+    batch_size: int = 64
+    model_update_freq: int = 1000
+    n_update_steps: int = 1
+
+    def to_wandb_config(self):
+        return {
+            "shared_buffer": self.shared_buffer,
+            "equal_batch_size": self.equal_batch_size,
+            "update_same_time": self.update_same_time,
+            "batch_size": self.batch_size,
+            "model_update_freq": self.model_update_freq,
+            "n_update_steps": self.n_update_steps,
+        }
+
+    def __str__(self):
+        return (
+            f"TrainerConfig:\n"
+            f"  shared_buffer: {self.shared_buffer}\n"
+            f"  equal_batch_size: {self.equal_batch_size}\n"
+            f"  update_same_time: {self.update_same_time}\n"
+            f"  batch_size: {self.batch_size}\n"
+            f"  model_update_freq: {self.model_update_freq}\n"
+            f"  n_update_steps: {self.n_update_steps}"
+        )
+
 
 @dataclass
 class EnvConfig:
     env_name: str = "GridEnv"
+    render_mode: str = "human"  # Options: "human", "rgb_array", None
+
+    def to_wandb_config(self):
+        return {
+            "env_name": self.env_name,
+            "render_mode": self.render_mode,
+        }
+
+    def __str__(self):
+        return (
+            f"EnvConfig:\n"
+            f"  env_name: {self.env_name}\n"
+            f"  render_mode: {self.render_mode}"
+        )
+
+@dataclass
+class GridEnvConfig(EnvConfig):
+    env_name: str = "GridEnv"
     env_size: int = 5
     max_steps_per_episode: int = 50
-    render_mode: str = "human"  # Options: "human", "rgb_array", None
 
     def to_wandb_config(self):
         return {
@@ -22,6 +71,60 @@ class EnvConfig:
             f"  env_size: {self.env_size}\n"
             f"  max_steps_per_episode: {self.max_steps_per_episode}\n"
             f"  render_mode: {self.render_mode}"
+        )
+
+@dataclass
+class SoccerEnvConfig(EnvConfig):
+    env_name: str = "SoccerEnv"
+    team_a_size: int = 2
+    team_b_size: int = 2
+    width: float = 100.0
+    height: float = 60.0
+    time_step: float = 0.1
+    goal_size: float = 20.0
+    kf: float = 20.0
+    fric: float = 0.85
+    bmw: float = 0.5
+    pmw: float = 0.2
+    max_steps: int = 1000
+    random_ball_placement: bool = False
+    sim_kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def to_wandb_config(self):
+        return {
+            "env_name": self.env_name,
+            "team_a_size": self.team_a_size,
+            "team_b_size": self.team_b_size,
+            "width": self.width,
+            "height": self.height,
+            "time_step": self.time_step,
+            "goal_size": self.goal_size,
+            "kf": self.kf,
+            "fric": self.fric,
+            "bmw": self.bmw,
+            "pmw": self.pmw,
+            "random_ball_placement": self.random_ball_placement,
+            "render_mode": self.render_mode,
+            "sim_kwargs": self.sim_kwargs,
+        }
+
+    def __str__(self):
+        return (
+            f"SoccerEnvConfig:\n"
+            f"  env_name: {self.env_name}\n"
+            f"  team_a_size: {self.team_a_size}\n"
+            f"  team_b_size: {self.team_b_size}\n"
+            f"  width: {self.width}\n"
+            f"  height: {self.height}\n"
+            f"  time_step: {self.time_step}\n"
+            f"  goal_size: {self.goal_size}\n"
+            f"  kf: {self.kf}\n"
+            f"  fric: {self.fric}\n"
+            f"  bmw: {self.bmw}\n"
+            f"  pmw: {self.pmw}\n"
+            f"  random_ball_placement: {self.random_ball_placement}\n"
+            f"  render_mode: {self.render_mode}\n"
+            f"  sim_kwargs: {self.sim_kwargs}"
         )
 
 @dataclass
@@ -191,11 +294,13 @@ class TrainingParams:
 @dataclass
 class Config:
     device: str = "cpu"
-    env: EnvConfig = EnvConfig()
-    agent: AgentConfig = AgentConfig()
-    training: TrainingParams = TrainingParams()
-    buffer: BufferConfig = BufferConfig()
-    logger: LoggerConfig = LoggerConfig(wandb_config={})
+    env: EnvConfig | GridEnvConfig | SoccerEnvConfig = field(default_factory=EnvConfig)
+    agent: AgentConfig = field(default_factory=AgentConfig)
+    training: TrainingParams = field(default_factory=TrainingParams)
+    buffer: BufferConfig = field(default_factory=BufferConfig)
+    logger: LoggerConfig = field(default_factory=lambda: LoggerConfig(wandb_config={}))
+    trainer: TrainerConfig = field(default_factory=TrainerConfig)
+    marl_agent_configs: dict = None
 
     def __str__(self):
         return (
@@ -205,5 +310,6 @@ class Config:
             f"{self.agent}\n"
             f"{self.training}\n"
             f"{self.buffer}\n"
-            f"{self.logger}"
+            f"{self.logger}\n"
+            f"{self.trainer}"
         )

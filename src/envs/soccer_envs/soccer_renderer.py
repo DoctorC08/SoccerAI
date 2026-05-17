@@ -21,7 +21,7 @@ class SoccerRenderer:
         self.reward_history = []
     
     
-    def draw(self, state, reward):
+    def draw(self, state, reward, timer_info=None, action_info=None):
         self.screen.fill((30, 30, 30)) 
         
         entities = np.reshape(state, (-1, 4)) # x, y, vx, vy
@@ -47,6 +47,8 @@ class SoccerRenderer:
         stats_rect = pygame.Rect(self.w, 0, self.ui_width, self.h)
         pygame.draw.rect(self.screen, (50, 50, 50), stats_rect)
         self.reward_history.append(reward)
+
+        self._draw_hud(stats_rect, timer_info=timer_info, action_info=action_info)
         
         # Draw line graph for rewards
         if self.reward_history and len(self.reward_history) > 1:
@@ -71,6 +73,47 @@ class SoccerRenderer:
             
         # Return frame for W&B
         return pygame.surfarray.array3d(self.screen).transpose(1, 0, 2)
+
+    def _draw_hud(self, rect, timer_info=None, action_info=None):
+        y = rect.y + 10
+        text_color = (235, 235, 235)
+
+        if timer_info is not None:
+            step = int(timer_info.get("step", 0))
+            max_steps = int(timer_info.get("max_steps", 0))
+            remaining_steps = int(timer_info.get("remaining_steps", 0))
+            remaining_seconds = float(timer_info.get("remaining_seconds", 0.0))
+
+            step_text = self.font.render(
+                f"Step: {step}/{max_steps}  Left: {remaining_steps}",
+                True,
+                text_color,
+            )
+            self.screen.blit(step_text, (rect.x + 8, y))
+            y += 22
+
+            timer_text = self.font.render(f"Time Left: {remaining_seconds:.1f}s", True, text_color)
+            self.screen.blit(timer_text, (rect.x + 8, y))
+            y += 28
+
+        if action_info is not None:
+            action_header = self.font.render("Recent Actions", True, (200, 255, 200))
+            self.screen.blit(action_header, (rect.x + 8, y))
+            y += 22
+
+            last_actions = action_info.get("last_actions", [])
+            if last_actions:
+                latest_text = self.font.render(f"Latest: {last_actions}", True, text_color)
+                self.screen.blit(latest_text, (rect.x + 8, y))
+                y += 20
+
+            for step_idx, step_actions in reversed(action_info.get("history", [])):
+                history_text = self.font.render(f"t={step_idx}: {step_actions}", True, (190, 190, 190))
+                self.screen.blit(history_text, (rect.x + 8, y))
+                y += 18
+
+                if y > rect.centery - 8:
+                    break
 
     def _draw_graph(self, data, rect):
         if not data or len(data) < 2: return

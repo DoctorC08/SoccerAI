@@ -6,9 +6,6 @@ class TrainerConfig:
     shared_buffer: bool = True
     equal_batch_size: bool = True
     update_same_time: bool = True
-    batch_size: int = 64
-    model_update_freq: int = 1000
-    n_update_steps: int = 1
 
     def to_wandb_config(self):
         return {
@@ -137,17 +134,6 @@ class LoggerConfig:
     sweep: bool = False
     logger_save_freq: int = 1
 
-    def __post_init__(self):
-        self.logger_config = {
-            "project": self.project,
-            "name": self.name,
-            "reinit": self.reinit,
-            "config": self.wandb_config if self.wandb_config is not None else {},
-            "sweep": self.sweep,
-        }
-        if self.wandb_config is None:
-            print("Warning: config is not provided, using empty config.")
-            print("Current config:", self.wandb_config)
 
     def __str__(self):
         return (
@@ -168,15 +154,23 @@ class AgentConfig:
     model: str = "A2C"
     policy_network: str = "NeuralNetwork"
     critic_network: str = "NeuralNetwork"
+
     transfer_learning: bool = False
     model_load_path: str = ""
+
     hidden_network_size: list[int] = field(default_factory=lambda: [64])
+
     learning_rate: float = 0.0001
     gamma: float = 0.99
     grad_clip: float = 1.0
     value_loss_coef: float = 0.5
     entropy_coef: float = 0.01
     optimizer: str = "ADAM"
+    
+    batch_size: int = 64
+
+    model_update_freq: int = 1000
+    n_update_steps: int = 1
 
     def to_wandb_config(self):
         return {
@@ -213,9 +207,6 @@ class AgentConfig:
         )
 
 
-# =====================
-# BUFFER CONFIG
-# =====================
 @dataclass
 class BufferConfig:
     type: str = "OnPolicy"
@@ -249,11 +240,7 @@ class BufferConfig:
 @dataclass
 class TrainingParams:
     total_training_steps: int = 100_000
-    batch_size: int = 500
     eval_freq: int = 100
-    model_update_freq: int = 1000
-    n_update_steps: int = 1
-    n_epochs: int = 1
     model_save_freq: int = 1000
     model_save_path: str = "./src/trained_agent"
     save_best_model: bool = True
@@ -265,10 +252,7 @@ class TrainingParams:
 
     def to_wandb_config(self):
         return {
-            "batch_size": self.batch_size,
             "eval_freq": self.eval_freq,
-            "model_update_freq": self.model_update_freq,
-            "n_update_steps": self.n_update_steps,
             "model_save_freq": self.model_save_freq,
         }
 
@@ -276,11 +260,7 @@ class TrainingParams:
         return (
             f"TrainingParams:\n"
             f"  total_training_steps: {self.total_training_steps}\n"
-            f"  batch_size: {self.batch_size}\n"
             f"  eval_freq: {self.eval_freq}\n"
-            f"  model_update_freq: {self.model_update_freq}\n"
-            f"  n_update_steps: {self.n_update_steps}\n"
-            f"  n_epochs: {self.n_epochs}\n"
             f"  model_save_freq: {self.model_save_freq}\n"
             f"  model_save_path: {self.model_save_path}\n"
             f"  save_best_model: {self.save_best_model}\n"

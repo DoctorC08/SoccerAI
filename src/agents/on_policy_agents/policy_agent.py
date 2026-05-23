@@ -8,6 +8,7 @@ from src.agents.base_agent import BaseAgent
 @dataclass
 class PolicyAgent(BaseAgent, ABC):
     entropy_coef: float = 0.01
+    n_epochs: int = 1
 
     @abstractmethod
     def find_value(self, state: torch.Tensor) -> torch.Tensor:

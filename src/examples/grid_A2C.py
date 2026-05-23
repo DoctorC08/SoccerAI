@@ -8,16 +8,16 @@ from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
 from src.envs.grid_env import GridEnv
 from src.train.trainer import Trainer
 from src.utils.configs_to_wandb import ConfigsToWandb
-from src.utils.config import Config, EnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig
+from src.utils.config import Config, GridEnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig
 from src.utils.run import run
 
 if __name__ == "__main__":
     # Set WANDB_MODE to "disabled" to disable wandb logging if needed
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_MODE"] = "disabled"
 
     wandb.login()
 
-    env_params = EnvConfig(
+    env_params = GridEnvConfig(
             env_name = "GridEnv",
             env_size = 10,
             max_steps_per_episode = 50,
@@ -38,6 +38,7 @@ if __name__ == "__main__":
         value_loss_coef = 0.5,
         entropy_coef = 0.05,
         optimizer = "ADAM",
+        batch_size=256, 
     )
 
     # recommended to have both batch_size in buffer and training_params be the same for on-policy agents
@@ -53,10 +54,8 @@ if __name__ == "__main__":
     )
 
     training_params = TrainingParams(
-        total_training_steps = 100_000,
-        batch_size = batch_size,
+        total_training_steps = 1_000_000,
         eval_freq = 500,
-        n_update_steps = 1,
         model_save_freq = 10_000,
         model_save_path = './src/trained_agents/10x10_Grid_A2C',
         save_best_model = True,
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     logger_params = LoggerConfig(
         logger="WandBLogger",
         project = "SoccerAI",
-        name = "10x10Grid_A2C_250kSteps",
+        name = f"{env_params.env_size}x{env_params.env_size}{env_params.env_name}_{agent_params.model}_1mSteps",
         reinit = False,
         wandb_config = wandb_config,
     )
@@ -83,5 +82,5 @@ if __name__ == "__main__":
         buffer=buffer_params,
     )
 
-    run(config)
+    run(config, num_post_eval_runs=10)
     wandb.finish()

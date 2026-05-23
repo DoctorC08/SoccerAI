@@ -5,19 +5,19 @@ from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
 from src.envs.grid_env import GridEnv
 from src.envs.soccer_envs.soccer_env import SoccerEnv
 
-from src.train.trainer import Trainer
+from src.train.on_policy_trainer import onPolicyTrainer
 from src.train.MARL_trainer import MARLTrainer
 from src.utils.config import Config 
 
 
-def run(cfg: Config, run_eval: int = 0, print_config=False, MARL=False) -> dict | None:
+def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False) -> dict | None:
     '''
     Run training with the given configuration.
     Args:
         cfg (Config): Configuration object containing all parameters.
-        run_eval (int): (0 will skip evaluation) Number of evaluation episodes to run after training. 
+        num_post_eval_runs (int): (0 will skip evaluation) Number of evaluation episodes to run after training. 
     Returns:
-        dict | None: Evaluation metrics if run_eval is True, else None.
+        dict | None: Evaluation metrics if num_post_eval_runs > 0.
     '''
     if MARL: 
         if cfg.env.env_name == "SoccerEnv":
@@ -278,10 +278,11 @@ def run(cfg: Config, run_eval: int = 0, print_config=False, MARL=False) -> dict 
                 critic_network=critic_network,
                 device=cfg.device,
                 learning_rate=cfg.agent.learning_rate,
+                batch_size=cfg.agent.batch_size,
                 grad_clip=cfg.agent.grad_clip,
                 value_loss_coef=cfg.agent.value_loss_coef,
                 entropy_coef=cfg.agent.entropy_coef,
-                optimizer=None, # use default optimizer, ADAM
+                optimizer=cfg.agent.optimizer, # use default optimizer, ADAM
             )
         else:
             raise NotImplementedError(f"Agent model {cfg.agent.model} not implemented in this example.")
@@ -292,18 +293,12 @@ def run(cfg: Config, run_eval: int = 0, print_config=False, MARL=False) -> dict 
 
         print("Initializing Trainer")
 
-        trainer = Trainer(
+        trainer = onPolicyTrainer(
             agent=agent, 
             buffer=buffer, 
             env=env,
-            logger_config=cfg.logger.logger_config, 
-            logger=cfg.logger.logger,
-            logger_save_freq=cfg.logger.logger_save_freq,
-            batch_size=cfg.training.batch_size, 
+            logger_config=cfg.logger, 
             eval_freq=cfg.training.eval_freq, 
-            model_update_freq=cfg.training.model_update_freq, 
-            n_update_steps=cfg.training.n_update_steps, 
-            n_epochs=cfg.training.n_epochs,
             model_save_freq=cfg.training.model_save_freq, 
             model_save_path=cfg.training.model_save_path, 
             save_best_model=cfg.training.save_best_model, 
@@ -317,4 +312,4 @@ def run(cfg: Config, run_eval: int = 0, print_config=False, MARL=False) -> dict 
     if print_config:
         print(cfg)
 
-    trainer.train(cfg.training.total_training_steps, run_eval=run_eval)
+    trainer.train(cfg.training.total_training_steps, num_post_eval_runs=num_post_eval_runs)

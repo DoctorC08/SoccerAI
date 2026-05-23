@@ -15,6 +15,9 @@ class ValueAgent(BaseAgent, ABC):
     memory_size: int = 100_000
     update_target_freq: int = 100
 
+    n_update_steps: int = 1
+    model_update_freq: int = 1
+
     target_network: torch.nn.Module = None
 
 

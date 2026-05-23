@@ -16,6 +16,7 @@ class BaseAgent(ABC):
     grad_clip: float
     
     train_start: int = 0
+    batch_size: int = 256
     
     training: bool = True
 

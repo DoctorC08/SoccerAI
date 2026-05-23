@@ -12,6 +12,7 @@ class A2CAgent(PolicyAgent):
                  policy_network: nn.Module, 
                  critic_network: nn.Module,               
                  learning_rate: float = 1e-4,
+                 batch_size: int = 256,
                  grad_clip: float = 1,
                  value_loss_coef: float = 0.5,
                  entropy_coef: float = 0.01,
@@ -26,6 +27,7 @@ class A2CAgent(PolicyAgent):
             grad_clip=grad_clip,
             entropy_coef=entropy_coef,
             device = device,
+            batch_size=batch_size,
             **kwargs
         )
         self.policy_network = policy_network
@@ -33,14 +35,17 @@ class A2CAgent(PolicyAgent):
         self.value_loss_coef = value_loss_coef
 
         # Assuming same optimizer for both actor and critic
-        self.critic_optimizer = optimizer if optimizer else torch.optim.Adam(
-            list(self.policy_network.parameters()) + list(self.critic_network.parameters()), 
-            lr=self.learning_rate
-        )
-        self.actor_optimizer = optimizer if optimizer else torch.optim.Adam(
-            list(self.policy_network.parameters()) + list(self.critic_network.parameters()), 
-            lr=self.learning_rate
-        )
+        if optimizer == "ADAM" or optimizer is None: 
+            self.critic_optimizer = torch.optim.Adam(
+                list(self.policy_network.parameters()) + list(self.critic_network.parameters()), 
+                lr=self.learning_rate
+            )
+            self.actor_optimizer = torch.optim.Adam(
+                list(self.policy_network.parameters()) + list(self.critic_network.parameters()), 
+                lr=self.learning_rate
+            )
+        else:
+            raise NotImplementedError(f"Unexpected optimizer type: {optimizer}")
 
         self._setup_model()
         

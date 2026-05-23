@@ -81,7 +81,7 @@ def train_sweep():
 
     print("Starting Run")
 
-    run(config, run_eval=10, print_config=True)
+    run(config, num_post_eval_runs=10, print_config=True)
         
 
 

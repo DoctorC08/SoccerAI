@@ -66,7 +66,6 @@ class TorchTensorBuffer(BaseBuffer):
         self.buffer = {}
         for key, value in self.temp_memory.items():
             if key in dtype_map:
-                # print(key, value)
                 if key == 'state':
                     self.buffer[key] = torch.stack([torch.as_tensor(v, dtype=dtype_map[key], device=self.device) for v in value])
                 else:

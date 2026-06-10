@@ -9,12 +9,15 @@ from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
 
 from src.envs.transition import Transition
 
+from src.eval.base_eval import BaseEval
+
 class onPolicyTrainer(BaseTrainer):
     def __init__(self, 
                  agent, 
                  buffer, 
                  env, 
                  logger_config, 
+                 evaluator: BaseEval,
                  eval_freq = 0, 
                  model_save_freq = 1000, 
                  model_save_path = './src/trained_agents/', 
@@ -24,7 +27,22 @@ class onPolicyTrainer(BaseTrainer):
                  env_info_fn=None, 
                  render_evals=True, 
                  fps = 5):
-        super().__init__(agent, buffer, env, logger_config, eval_freq, model_save_freq, model_save_path, save_best_model, best_model_exp_moving_avg, log_env_info, env_info_fn, render_evals, fps)
+        super().__init__(
+            agent=agent, 
+            buffer=buffer, 
+            env=env, 
+            logger_config=logger_config, 
+            evaluator=evaluator, 
+            eval_freq=eval_freq, 
+            model_save_freq=model_save_freq, 
+            model_save_path=model_save_path, 
+            save_best_model=save_best_model, 
+            best_model_exp_moving_avg=best_model_exp_moving_avg, 
+            log_env_info=log_env_info, 
+            env_info_fn=env_info_fn, 
+            render_evals=render_evals, 
+            fps=fps
+            )
 
         self.reset_metrics()
 
@@ -59,6 +77,9 @@ class onPolicyTrainer(BaseTrainer):
     
     def init_env(self, env):
         return env
+    
+    def init_eval(self, evaluator):
+        return evaluator(self.render_evals, self.env, self.get_action, self.get_metrics)
     
     def collect_transition(self, state) -> Transition:
         action, logits = self.get_action(state, is_training=True)

@@ -6,9 +6,8 @@ from src.envs.grid_env import GridEnv
 from src.envs.soccer_envs.soccer_env import SoccerEnv
 
 from src.train.on_policy_trainer import onPolicyTrainer
-from src.train.MARL_trainer import MARLTrainer
+from src.train.old_trainers.MARL_trainer import MARLTrainer
 from src.utils.config import Config 
-
 
 def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False) -> dict | None:
     '''
@@ -298,6 +297,7 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
             buffer=buffer, 
             env=env,
             logger_config=cfg.logger, 
+            evaluator=cfg.evaluator.evaluator, 
             eval_freq=cfg.training.eval_freq, 
             model_save_freq=cfg.training.model_save_freq, 
             model_save_path=cfg.training.model_save_path, 

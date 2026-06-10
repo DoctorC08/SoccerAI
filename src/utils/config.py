@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.eval.base_eval import BaseEval
+
 @dataclass
 class TrainerConfig:
     shared_buffer: bool = True
@@ -238,6 +240,21 @@ class BufferConfig:
         )
 
 @dataclass
+class EvalParams: 
+    evaluator: BaseEval
+
+    def to_wandb_config(self):
+        return {
+            "evaluator": self.evaluator,
+        }
+
+    def __str__(self):
+        return (
+            f"EvalParams:\n"
+            f"  evaluator: {self.evaluator}\n"
+            )
+
+@dataclass
 class TrainingParams:
     total_training_steps: int = 100_000
     eval_freq: int = 100
@@ -281,6 +298,7 @@ class Config:
     logger: LoggerConfig = field(default_factory=lambda: LoggerConfig(wandb_config={}))
     trainer: TrainerConfig = field(default_factory=TrainerConfig)
     marl_agent_configs: dict = None
+    evaluator: EvalParams = None
 
     def __str__(self):
         return (

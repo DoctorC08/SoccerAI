@@ -21,6 +21,9 @@ from src.agents.off_policy_agents.value_agent import ValueAgent
 from src.agents.on_policy_agents.policy_agent import PolicyAgent
 from src.agents.on_policy_agents.A2C import A2CAgent
 
+from src.eval.base_eval import BaseEval
+from src.eval.single_agent_eval
+
 class BaseTrainer(ABC):
     def __init__(self, 
                 agent: BaseAgent, 
@@ -98,6 +101,9 @@ class BaseTrainer(ABC):
 
         self.device = self.get_device()
 
+        # Initialize evalutaor
+        self.evalutaor = self.init_evaluator(self, evaluator)
+
         # Validate params
         self.validate_params(self.agents, self.buffers, self.logger)
 
@@ -130,6 +136,11 @@ class BaseTrainer(ABC):
     @abstractmethod
     def init_env(self, env):
         # Initialize env
+        pass 
+
+    @abstractmethod
+    def init_eval(self, evaluator):
+        # Initialize eval
         pass 
 
     @abstractmethod
@@ -217,7 +228,7 @@ class BaseTrainer(ABC):
         self.t = 0
         for t in tqdm(range(n_steps)): 
             if t % self.eval_freq == 0: 
-                self.eval()
+                self.evaluator.eval()
             
             self.run_step()
             self.update()
@@ -228,7 +239,7 @@ class BaseTrainer(ABC):
         if num_post_eval_runs: 
             eval_metrics = {}
             for _ in range(num_post_eval_runs):
-                cur_metrics = self.eval(log=False)
+                cur_metrics = self.evaluator.eval(log=False)
                 for key, value in cur_metrics.items(): 
                     eval_metrics[key] = eval_metrics.get(key, 0) + value
 
@@ -345,76 +356,6 @@ class BaseTrainer(ABC):
             self.n_eps
         )
         return False
-
-    def eval(self, log=True):
-        if self.render_evals:
-            self.env.change_render_mode('rgb_array')
-        state, _ = self.env.reset()
-        eval_ep_rews = 0
-        length = 0
-
-        eval_renderings = []
-
-        while True:
-            action, logits = self.get_action(state, is_training=False)
-            if self.render_evals: 
-                state, reward, terminated, truncated, _, render = self.env.step(action)
-            else:
-                state, reward, terminated, truncated, _ = self.env.step(action)
-            eval_ep_rews += reward
-            eval_metrics = self.get_metrics(logits, logger_dir="eval/")
-            length += 1
-
-            if self.render_evals:
-                # Append render to eval_renderings shape: (t, height, width, channels)
-                eval_renderings.append(render)
-
-            if terminated or truncated:
-                break
-        
-
-        # Reshape eval_renderings to (t, channels, height, width)
-        if log: 
-            eval_renderings = np.array(eval_renderings)
-            if eval_renderings.ndim == 3:
-                # if only single frame, expand dim
-                eval_renderings = np.expand_dims(eval_renderings, axis=0)
-
-            elif eval_renderings.ndim == 2:
-                # If only single grayscale frame, expand dims
-                eval_renderings = np.expand_dims(eval_renderings, axis=-1)
-                eval_renderings = np.expand_dims(eval_renderings, axis=0)
-            if eval_renderings.ndim == 4:
-                eval_render_T = np.transpose(eval_renderings, (0, 3, 1, 2))
-                wandb_video = wandb.Video(eval_render_T, 
-                                    fps=self.fps, 
-                                    format="mp4", 
-                                    caption=f"{self.env.__class__.__name__} Render: Eval at episode: {self.n_eps}, \
-                                        rew: {eval_ep_rews}")
-                self.logger.log({"eval/video": wandb_video}, self.n_eps)
-            elif eval_renderings.ndim == 1:
-                # if no video collected
-                pass
-            else: 
-                print(f"Error: Final rendering array has unexpected dimensions: {eval_renderings.ndim}")
-
-            self.logger.log({
-                    "eval/ep_rewards": eval_ep_rews, 
-                    "eval/length": length
-                } | eval_metrics, self.n_eps) 
-        
-        if self.save_best_model:
-            self.cur_score = (self.best_model_exp_moving_avg * self.cur_score) + \
-                             ((1 - self.best_model_exp_moving_avg) * eval_ep_rews)
-            if self.cur_score > self.save_threshold: 
-                if os.path.exists(self.model_save_path) is False:
-                    os.makedirs(self.model_save_path)
-                self.save_agents(path_name=f"{self.model_save_path}/" + self.name)
-                self.save_threshold = self.cur_score
-        return {
-            "final/ep_rewards": eval_ep_rews, 
-            "final/length": length
-        } 
 
     def cleanup(self):
         self.logger.close()

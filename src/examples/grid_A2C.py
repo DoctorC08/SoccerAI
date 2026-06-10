@@ -2,13 +2,9 @@ import torch
 import wandb
 import os
 
-from src.agents.neural_network import NeuralNetwork
-from src.agents.on_policy_agents.A2C import A2CAgent
-from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
-from src.envs.grid_env import GridEnv
-from src.train.trainer import Trainer
+from src.eval.single_agent_eval import SingleAgentEval
 from src.utils.configs_to_wandb import ConfigsToWandb
-from src.utils.config import Config, GridEnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig
+from src.utils.config import Config, GridEnvConfig, LoggerConfig, AgentConfig, TrainingParams, BufferConfig, EvalParams
 from src.utils.run import run
 
 if __name__ == "__main__":
@@ -71,11 +67,14 @@ if __name__ == "__main__":
         wandb_config = wandb_config,
     )
 
+    evaluator = EvalParams(evaluator=SingleAgentEval)
+
     # print(wandb_config)
 
     config = Config(
         device="cuda" if torch.cuda.is_available() else "mps",
         env=env_params,
+        evaluator=evaluator,
         logger=logger_params,
         agent=agent_params,
         training=training_params,

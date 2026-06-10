@@ -14,6 +14,7 @@ from src.utils.config import LoggerConfig
 
 from src.loggers.wandb_logger import WandBLogger
 from src.envs.mod_base_gym_env import modBaseGymEnv
+from src.envs.transition import Transition
 
 from src.agents.base_agent import BaseAgent
 from src.agents.off_policy_agents.value_agent import ValueAgent
@@ -26,7 +27,8 @@ class BaseTrainer(ABC):
                 buffer: BaseBuffer,
                 env: modBaseGymEnv, # Custom modified base gym
                 logger_config: LoggerConfig, 
-                eval_freq: int = 0,
+                evaluator: BaseEval,
+                eval_freq: int = 100,
                 model_save_freq: int = 1000,
                 model_save_path: str = './src/trained_agents/',
                 save_best_model: bool = True,
@@ -63,6 +65,7 @@ class BaseTrainer(ABC):
         self.env = self.init_env(env)
         self._state = None
         self.ep_rews = 0.0 
+        self.ind_ep_rews = []
         self.log_env_info = log_env_info
         self.env_info_fn = env_info_fn
         self.env_info = None
@@ -93,6 +96,8 @@ class BaseTrainer(ABC):
         self.n_updates = 0
         self.n_eps = 0
 
+        self.device = self.get_device()
+
         # Validate params
         self.validate_params(self.agents, self.buffers, self.logger)
 
@@ -110,6 +115,13 @@ class BaseTrainer(ABC):
         # get a batch size to log: update_frames_per_sec": cur_updates * self.batch_size / delta_t,
         pass
 
+    @abstractmethod
+    def get_device(self) -> torch.DeviceObjType:
+        '''
+        get device
+        '''
+        return self.agents.device
+
     @abstractmethod 
     def init_buffers(self, buffers):
         # Initialize buffers
@@ -121,6 +133,13 @@ class BaseTrainer(ABC):
         pass 
 
     @abstractmethod
+    def collect_transition(self, state) -> Transition:
+        '''
+        collect a full transition
+        '''
+        pass
+
+    @abstractmethod
     def get_action(self, state, is_training):
         '''
         Get action, return action, logits (if logits not used then return None)
@@ -128,7 +147,7 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def update_buffer(self, state, action, reward, done, logits, next_state) -> None: 
+    def update_buffer(self, transition: Transition) -> None: 
         '''
         Add new data into buffer and call updates/clear if needed
 
@@ -140,21 +159,20 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def sample_data(self, clear_buffer=True) -> None:
+    def clear_buffers(self): 
         '''
-        Sample data from the buffers
-        Used in update step
+        Clear buffers
         '''
         pass
+
 
     @abstractmethod 
     def update_agents(self):
-        # update agents and return update_metrics, number of updates
-        # update self.n_updates 
-        
+        '''
+        update agents and return update_metrics, number of updates
+        pdate self.n_updates 
+        '''
         pass
-
-
 
     @abstractmethod
     def get_metrics(self, logits, logger_dir): 
@@ -188,24 +206,9 @@ class BaseTrainer(ABC):
 
     @abstractmethod 
     def validate_params(self, agents, buffers, logger):
-        # self.is_off_policy = isinstance(self.agents, ValueAgent) 
-        # self.is_on_policy = isinstance(self.agents, PolicyAgent)
-
-        # if self.is_on_policy:
-        #     assert self.batch_size > 0, "Batch size must be positive for on-policy agents"
-        #     assert self.eval_freq > 0, "Evaluation frequency must be positive for on-policy agents"
-        #     assert self.batch_size <= self.buffers.max_size, f"Batch size must be less than or equal to buffer size for on-policy agents. Current buffer size: {self.buffer.max_size}, batch size: {self.batch_size}"
-        #     assert self.buffers.max_size % self.batch_size == 0, "Buffer size must be multiple of batch size for on-policy agents"
-        #     if isinstance(self.agents, A2CAgent):
-        #         assert agents.n_epochs == 1, "Number of epochs must be 1 for A2C agents"
-        #     else:
-        #         assert agents.n_epochs > 0, "Number of epochs must be positive for on-policy agents"
-
-        # elif self.is_off_policy:
-        #     assert agents.n_update_steps > 0, "Number of update steps must be positive for off-policy agents"
-        #     assert agents.model_update_freq > 0, "Model update frequency must be positive for off-policy agents"
-        # else: 
-        #     raise TypeError("Agent must be either on-policy or off-policy type. Unknown type used")
+        '''
+        Validata parameter choices passed in
+        '''
         pass 
         
 
@@ -221,11 +224,12 @@ class BaseTrainer(ABC):
 
             self.t += 1
 
+        #TODO: move eval into it's own class
         if num_post_eval_runs: 
             eval_metrics = {}
             for _ in range(num_post_eval_runs):
-                cur_metrics = self.eval(log=False, return_eval_metrics=True)
-                for key, value in cur_metrics.items(): #TODO: .items vs .values tinme
+                cur_metrics = self.eval(log=False)
+                for key, value in cur_metrics.items(): 
                     eval_metrics[key] = eval_metrics.get(key, 0) + value
 
             # average values
@@ -233,7 +237,7 @@ class BaseTrainer(ABC):
                 eval_metrics[key] /= num_post_eval_runs
             print("Eval metrics:", eval_metrics)
         
-        self.logger.log(eval_metrics)
+            self.logger.log(eval_metrics)
 
         self.cleanup()
 
@@ -243,7 +247,6 @@ class BaseTrainer(ABC):
         print(f"{self.n_train_step} training steps ran")
         print(f"{self.n_eps} episodes ran")
         print(f"{self.n_updates} model updates ran")
-        print(f"{self.n_update_steps} update steps ran")
 
     def run_step(self):
         if self.log_env_info:
@@ -253,36 +256,45 @@ class BaseTrainer(ABC):
             self.ep_rews = 0
         if self._state is None: 
             self._state, info = self.env.reset()
+            # send state to a tensor
+            if not isinstance(self._state, torch.Tensor):
+                self._state = torch.as_tensor(self._state, dtype=torch.float32, device=self.device)
         if self.env.render_mode is not None: 
             self.env.change_render_mode(None)
 
-        action, logits = self.get_action(self._state, is_training=True)
-        next_state, reward, terminated, truncated, info = self.env.step(action)
-        done = terminated or truncated
+
+        #TODO: Define collect_transition and transition dataclass to allow for MARL envs/trainers
+        transition = self.collect_transition(self, self._state)
 
         # find state value if on policy
         # update buffer
-        self.update_buffer(self._state, action, reward, done, logits, next_state)
+        self.update_buffer(self._state, transition=transition)
 
-        self._state = next_state
+        self._state = transition.next_state
 
-        self.ep_rews += reward
+        if self.ind_ep_rews is None:
+            self.ind_ep_rews = [i for i in transition.rewards]
+
+        self.ep_rews += sum(transition.rewards)
+
+        self.ind_ep_rews += transition.rewards
+
         if self.log_env_info:
             self.env_info.append(info)
 
-        metrics = self.get_metrics(logits, logger_dir="train/")
+        metrics = self.get_metrics(transition.logits, logger_dir="train/")
 
         self.n_train_step += 1
 
         # Log episodic values if done
-        if done:
+        if transition.done:
             self.n_eps += 1
             if self.n_eps % self.logger_save_freq == 0: 
                 cur_time = time.time()
                 if self.log_env_info:
                     self.logger.log({
                         "train/ep_rewards": self.ep_rews, 
-                        "train/terminated": terminated, 
+                        "train/done": transition.done, 
                         "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
                         "train/env_info": self.env_info_fn(self.env_info), 
                         } | metrics, self.n_eps
@@ -291,7 +303,7 @@ class BaseTrainer(ABC):
                 else: 
                     self.logger.log({
                         "train/ep_rewards": self.ep_rews, 
-                        "train/terminated": terminated, 
+                        "train/done": transition.done, 
                         "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
                     } | metrics, 
                     self.n_eps
@@ -306,19 +318,18 @@ class BaseTrainer(ABC):
 
 
     
-    def update(self, skip_update=None) -> bool:
+    def update(self) -> bool:
         '''
         update agents and log time
         returns bool if agents are updated
         '''
-        if (skip_update is None or skip_update is True) and self.skip_update(): 
+        if self.skip_update(): 
             return False
 
         _start_update_time = time.time()
 
         # sample buffer
         # inumerate through data and update
-        # self.sample_data()
         update_metrics, cur_updates = self.update_agents()
 
 
@@ -335,7 +346,7 @@ class BaseTrainer(ABC):
         )
         return False
 
-    def eval(self, log=True, return_eval_metrics=False):
+    def eval(self, log=True):
         if self.render_evals:
             self.env.change_render_mode('rgb_array')
         state, _ = self.env.reset()
@@ -400,15 +411,14 @@ class BaseTrainer(ABC):
                     os.makedirs(self.model_save_path)
                 self.save_agents(path_name=f"{self.model_save_path}/" + self.name)
                 self.save_threshold = self.cur_score
-        if return_eval_metrics:
-            return {
-                "final/ep_rewards": eval_ep_rews, 
-                "final/length": length
-            } 
+        return {
+            "final/ep_rewards": eval_ep_rews, 
+            "final/length": length
+        } 
 
     def cleanup(self):
         self.logger.close()
-        self.buffer.clear()
+        self.clear_buffers()
         self.env.close()
 
 

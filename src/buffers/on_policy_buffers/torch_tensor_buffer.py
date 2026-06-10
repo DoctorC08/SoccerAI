@@ -1,8 +1,10 @@
 import torch
+from dataclasses import asdict
 from src.buffers.base_buffer import BaseBuffer
 from typing import List, Dict, Tuple
 import random
 import numpy as np
+from src.envs.transition import Transition
 
 class TorchTensorBuffer(BaseBuffer):
     def __init__(self, max_size: int, device: str, batch_size: int, gamma: float = 0.99, gae_lambda: float = 0.95) -> None:
@@ -29,23 +31,20 @@ class TorchTensorBuffer(BaseBuffer):
             print("Warning: max_size is not a multiple of batch_size. Some data may be dropped during sampling.")
             print("max_size:", max_size, "batch_size:", batch_size)
 
-    def add(self, data: dict) -> None:
+    def add(self, data: Transition) -> None:
         '''
         add a single experience to the buffer
         '''
         if self.index >= self.max_size:
             self.is_buffer_full = True
             return
-        keys = ['state', 'action', 'reward', 'done', 'log_prob', 'value']
+        keys = ['state', 'actions', 'rewards', 'done', 'logits', 'value']
         if not self.temp_memory:
-            self.temp_memory = {key: [] for key in keys}
+            self.temp_memory = {key: torch.zeros(self.max_size) for key in keys}
 
-        for key in data:
-            if key in keys: 
-                # if key == 'log_prob' or key == 'value':
-                #     self.temp_memory[key].append(data[key].item())
-                # else:
-                self.temp_memory[key].append(data[key])
+        for key, value in asdict(data).items():
+                if key in keys: 
+                    self.temp_memory[key][self.index] = value
         
         self.is_buffer_finalized = False
 
@@ -59,21 +58,23 @@ class TorchTensorBuffer(BaseBuffer):
         '''
         Convert temp_memory lists to tensors and store in buffer
         '''
-        dtype_map = {'action': torch.long, 'done': torch.bool, 
-                     'state': torch.float32, 'reward': torch.float32, 
-                     'log_prob': torch.float32, 'value': torch.float32}
+        # dtype_map = {'action': torch.long, 'done': torch.bool, 
+        #              'state': torch.float32, 'reward': torch.float32, 
+        #              'log_prob': torch.float32, 'value': torch.float32}
+        # self.buffer = {}
+        # for key, value in self.temp_memory.items():
+        #     if key in dtype_map:
+        #         if key == 'state':
+        #             self.buffer[key] = torch.stack([torch.as_tensor(v, dtype=dtype_map[key], device=self.device) for v in value])
+        #         else:
+        #             self.buffer[key] = torch.tensor(value, dtype=dtype_map[key], device=self.device)
+        #     else:
+        #         # Default to float32 if key not recognized
+        #         print(f"Warning: Key {key} not recognized, defaulting to float32")
+        #         self.buffer[key] = torch.tensor(value, dtype=torch.float32, device=self.device)
 
-        self.buffer = {}
-        for key, value in self.temp_memory.items():
-            if key in dtype_map:
-                if key == 'state':
-                    self.buffer[key] = torch.stack([torch.as_tensor(v, dtype=dtype_map[key], device=self.device) for v in value])
-                else:
-                    self.buffer[key] = torch.tensor(value, dtype=dtype_map[key], device=self.device)
-            else:
-                # Default to float32 if key not recognized
-                print(f"Warning: Key {key} not recognized, defaulting to float32")
-                self.buffer[key] = torch.tensor(value, dtype=torch.float32, device=self.device)
+        # Cast temp memory to device
+        self.buffer = {k: v.to(self.device) for k, v in self.temp_memory.items()}
 
         self.temp_memory = {}
 
@@ -84,7 +85,7 @@ class TorchTensorBuffer(BaseBuffer):
     def sample(self, batch_size: int = None, clear_buffer: bool = True) -> List[Dict[str, List]]:
         
         if batch_size is not None:
-            batch_size = self.batch_size
+            batch_size = batch_size
         else: 
             batch_size = self.batch_size
 

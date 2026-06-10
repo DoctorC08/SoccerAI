@@ -7,6 +7,8 @@ from src.agents.on_policy_agents.policy_agent import PolicyAgent
 from src.agents.on_policy_agents.A2C import A2CAgent
 from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
 
+from src.envs.transition import Transition
+
 class onPolicyTrainer(BaseTrainer):
     def __init__(self, 
                  agent, 
@@ -23,6 +25,8 @@ class onPolicyTrainer(BaseTrainer):
                  render_evals=True, 
                  fps = 5):
         super().__init__(agent, buffer, env, logger_config, eval_freq, model_save_freq, model_save_path, save_best_model, best_model_exp_moving_avg, log_env_info, env_info_fn, render_evals, fps)
+
+        self.reset_metrics()
 
     
     def init_logger(self, logger):
@@ -44,11 +48,32 @@ class onPolicyTrainer(BaseTrainer):
     def get_batch_size(self, agents):
         return agents.batch_size
 
+    def get_device(self):
+        return super().get_device()
+
     def init_buffers(self, buffers):
         return buffers
     
+    def clear_buffers(self):
+        self.buffers.clear()
+    
     def init_env(self, env):
         return env
+    
+    def collect_transition(self, state) -> Transition:
+        action, logits = self.get_action(state, is_training=True)
+        next_state, reward, terminated, truncated, info = self.env.step(action)
+        done = terminated or truncated
+        transition = Transition(
+            state=state, 
+            next_state=torch.from_numpy(next_state, dtype=torch.float32, device=self.device),
+            actions=action, 
+            rewards=reward, 
+            logits=logits, 
+            done=done,
+            info=info,
+        )
+        return transition
 
     def get_action(self, state, is_training):
         # Get action, return action, logits 
@@ -74,14 +99,10 @@ class onPolicyTrainer(BaseTrainer):
         })
         if self.buffers.is_buffer_full:
             self.buffers.finalize_buffer(self.agents.find_value(next_state.to(self.agents.device)).detach().cpu().item())
-            self.update(skip_update=False)
+            self.update()
             self.buffers.clear()
 
-        
-
-    def sample_data(self, clear_buffer=True) -> None:
-        return self.buffers.sample(self.batch_size, clear_buffer=clear_buffer)
-
+    
     def update_agents(self):
         cur_updates = 0
         # update agents and return update_metrics, number of updates
@@ -110,16 +131,11 @@ class onPolicyTrainer(BaseTrainer):
 
     def get_metrics(self, logits, logger_dir): 
         # update any training metrics, return a dict of metrics to be logged or used
-        try: 
-            if self.ep_train_entropy is None:
-                self.ep_train_entropy = 0
-        except AttributeError as e:
+        if self.ep_train_entropy is None:
             self.ep_train_entropy = 0
 
-        
-
         # Find "certainty" by using entropy H(pi(.|s)) = - sum_a pi(a|s) log pi(a|s)
-        self.ep_train_entropy += -math.exp(logits.item()) * logits.item()
+        self.ep_train_entropy += (-logits.exp() * logits).sum().item()
 
         return {
             f"{logger_dir}ep_train_entropy": self.ep_train_entropy,
@@ -134,7 +150,10 @@ class onPolicyTrainer(BaseTrainer):
 
     def skip_update(self):
         # Always skip update in normal training loop and only update when buffer is full
-        return True
+        if self.buffers.is_buffer_full: 
+            return False
+        else: 
+            return True
 
     def validate_params(self, agents, buffers, logger):
         assert isinstance(agents, PolicyAgent)

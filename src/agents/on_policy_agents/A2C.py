@@ -7,16 +7,16 @@ from src.agents.on_policy_agents.policy_agent import PolicyAgent
 
 class A2CAgent(PolicyAgent):
     def __init__(self,
-                 state_size: spaces.Space, 
-                 action_size: spaces.Space,
+                 state_size: spaces.Space | int, 
+                 action_size: spaces.Space | int,
                  policy_network: nn.Module, 
-                 critic_network: nn.Module,               
+                 critic_network: nn.Module,     
+                 optimizer: str,
                  learning_rate: float = 1e-4,
                  batch_size: int = 256,
                  grad_clip: float = 1,
                  value_loss_coef: float = 0.5,
                  entropy_coef: float = 0.01,
-                 optimizer: torch.optim.Optimizer = None,
                  device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "mps"),
                  **kwargs
                 ) -> None:

@@ -1,35 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
+import torch
 
 from src.eval.base_eval import BaseEval
-
-@dataclass
-class TrainerConfig:
-    shared_buffer: bool = True
-    equal_batch_size: bool = True
-    update_same_time: bool = True
-
-    def to_wandb_config(self):
-        return {
-            "shared_buffer": self.shared_buffer,
-            "equal_batch_size": self.equal_batch_size,
-            "update_same_time": self.update_same_time,
-            "batch_size": self.batch_size,
-            "model_update_freq": self.model_update_freq,
-            "n_update_steps": self.n_update_steps,
-        }
-
-    def __str__(self):
-        return (
-            f"TrainerConfig:\n"
-            f"  shared_buffer: {self.shared_buffer}\n"
-            f"  equal_batch_size: {self.equal_batch_size}\n"
-            f"  update_same_time: {self.update_same_time}\n"
-            f"  batch_size: {self.batch_size}\n"
-            f"  model_update_freq: {self.model_update_freq}\n"
-            f"  n_update_steps: {self.n_update_steps}"
-        )
-
 
 @dataclass
 class EnvConfig:
@@ -132,7 +105,7 @@ class LoggerConfig:
     project: str = "SoccerAI"
     name: str = "DefaultRun"
     reinit: bool = False
-    wandb_config: dict = None  # Additional WandB config parameters
+    wandb_config: dict = {}  # Additional WandB config parameters
     sweep: bool = False
     logger_save_freq: int = 1
 
@@ -241,7 +214,9 @@ class BufferConfig:
 
 @dataclass
 class EvalParams: 
-    evaluator: BaseEval
+    evaluator: BaseEval = SingleAgentEval
+    fps: int = 5
+    eval_freq: int = 100
 
     def to_wandb_config(self):
         return {
@@ -257,57 +232,55 @@ class EvalParams:
 @dataclass
 class TrainingParams:
     total_training_steps: int = 100_000
-    eval_freq: int = 100
     model_save_freq: int = 1000
     model_save_path: str = "./src/trained_agent"
     save_best_model: bool = True
     best_model_exp_moving_avg: float = 0.99
     log_env_info: bool = False
-    env_info_fn: callable = None
+    env_info_fn: callable = None #TODO find data type for callable functions
     render_evals: bool = True
-    fps: int = 5
+    n_envs: int = 5
+    n_epochs: int = 1
 
     def to_wandb_config(self):
         return {
-            "eval_freq": self.eval_freq,
+            "total_training_steps": self.total_training_steps, 
             "model_save_freq": self.model_save_freq,
+            "n_envs": self.n_envs, 
         }
 
     def __str__(self):
         return (
             f"TrainingParams:\n"
             f"  total_training_steps: {self.total_training_steps}\n"
-            f"  eval_freq: {self.eval_freq}\n"
             f"  model_save_freq: {self.model_save_freq}\n"
             f"  model_save_path: {self.model_save_path}\n"
             f"  save_best_model: {self.save_best_model}\n"
             f"  best_model_exp_moving_avg: {self.best_model_exp_moving_avg}\n"
             f"  log_env_info: {self.log_env_info}\n"
             f"  render_evals: {self.render_evals}\n"
-            f"  fps: {self.fps}"
+            f"  n_envs: {self.n_envs}"
         )
 
 
 @dataclass
 class Config:
-    device: str = "cpu"
+    device: torch.device = torch.device("cpu")
     env: EnvConfig | GridEnvConfig | SoccerEnvConfig = field(default_factory=EnvConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     training: TrainingParams = field(default_factory=TrainingParams)
     buffer: BufferConfig = field(default_factory=BufferConfig)
-    logger: LoggerConfig = field(default_factory=lambda: LoggerConfig(wandb_config={}))
-    trainer: TrainerConfig = field(default_factory=TrainerConfig)
-    marl_agent_configs: dict = None
-    evaluator: EvalParams = None
+    logger: LoggerConfig = field(default_factory=LoggerConfig)
+    marl_agent_configs: dict = {}
+    evaluator: EvalParams = field(default_factory=EvalParams)
 
     def __str__(self):
         return (
             f"Config:\n"
             f"  device: {self.device}\n"
-            f"{self.env}\n"
-            f"{self.agent}\n"
-            f"{self.training}\n"
-            f"{self.buffer}\n"
-            f"{self.logger}\n"
-            f"{self.trainer}"
+            f"  env: {self.env}\n"
+            f"  agent: {self.agent}\n"
+            f"  training: {self.training}\n"
+            f"  buffer: {self.buffer}\n"
+            f"  logger: {self.logger}\n"
         )

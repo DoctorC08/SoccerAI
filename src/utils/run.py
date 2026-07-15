@@ -7,7 +7,9 @@ from src.envs.soccer_envs.soccer_env import SoccerEnv
 
 from src.train.on_policy_trainer import onPolicyTrainer
 from src.train.old_trainers.MARL_trainer import MARLTrainer
-from src.utils.config import Config 
+from src.utils.config import Config, GridEnvConfig
+
+from src.eval.single_agent_eval import SingleAgentEval
 
 def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False) -> dict | None:
     '''
@@ -188,7 +190,7 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
             logger_config=cfg.logger.logger_config, 
             logger=cfg.logger.logger,
             logger_save_freq=cfg.logger.logger_save_freq,
-            eval_freq=cfg.training.eval_freq, 
+            eval_freq=cfg.evaluator.eval_freq, 
             model_save_freq=cfg.training.model_save_freq, 
             model_save_path=cfg.training.model_save_path, 
             save_best_model=cfg.training.save_best_model, 
@@ -196,7 +198,7 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
             log_env_info=cfg.training.log_env_info,
             env_info_fn=cfg.training.env_info_fn,
             render_evals=cfg.training.render_evals,
-            fps=cfg.training.fps,
+            fps=cfg.evaluator.fps,
             shared_buffer=shared_buffer,
             buffer=buffer if shared_buffer else None,
             equal_batch_size=equal_batch_size,
@@ -208,13 +210,15 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
         
     else: 
         if cfg.env.env_name == "GridEnv":
-            env = GridEnv(
+            assert type(cfg.env) is GridEnvConfig
+            # TODO: How to get over these extra inheritance properties
+            env = lambda: GridEnv(
                 size = cfg.env.env_size, 
                 terminating_step= cfg.env.max_steps_per_episode,
                 render_mode = cfg.env.render_mode,
             )
         elif cfg.env.env_name == "SoccerEnv":
-            env = SoccerEnv(
+            env = lambda: SoccerEnv(
                 team_a_size=cfg.env.team_a_size,
                 team_b_size=cfg.env.team_b_size,
                 width=cfg.env.width,
@@ -246,8 +250,9 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
         else:
             raise NotImplementedError(f"Buffer type {cfg.buffer.type} not implemented in this example.")
 
-        state_size = env.observation_space.shape[0]
-        action_size = env.action_space.n
+        temp_env = env()
+        state_size = temp_env.observation_space.shape[0]
+        action_size = temp_env.action_space.n
 
         if cfg.agent.on_policy: 
             if cfg.agent.policy_network == "NeuralNetwork":
@@ -281,7 +286,7 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
                 grad_clip=cfg.agent.grad_clip,
                 value_loss_coef=cfg.agent.value_loss_coef,
                 entropy_coef=cfg.agent.entropy_coef,
-                optimizer=cfg.agent.optimizer, # use default optimizer, ADAM
+                optimizer=cfg.agent.optimizer, 
             )
         else:
             raise NotImplementedError(f"Agent model {cfg.agent.model} not implemented in this example.")
@@ -296,9 +301,10 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
             agent=agent, 
             buffer=buffer, 
             env=env,
+            n_envs=cfg.training.n_envs,
             logger_config=cfg.logger, 
             evaluator=cfg.evaluator.evaluator, 
-            eval_freq=cfg.training.eval_freq, 
+            eval_freq=cfg.evaluator.eval_freq, 
             model_save_freq=cfg.training.model_save_freq, 
             model_save_path=cfg.training.model_save_path, 
             save_best_model=cfg.training.save_best_model, 
@@ -306,10 +312,10 @@ def run(cfg: Config, num_post_eval_runs: int = 0, print_config=False, MARL=False
             log_env_info=cfg.training.log_env_info,
             env_info_fn=cfg.training.env_info_fn,
             render_evals=cfg.training.render_evals,
-            fps=cfg.training.fps,
+            fps=cfg.evaluator.fps,
         )
 
-    if print_config:
-        print(cfg)
+        if print_config:
+            print(cfg)
 
-    trainer.train(cfg.training.total_training_steps, num_post_eval_runs=num_post_eval_runs)
+        trainer.train(cfg.training.total_training_steps, num_post_eval_runs=num_post_eval_runs)

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 import torch 
-from typing import List, Dict
+from typing import List, Dict, Any
+
+from src.envs.transition import Transition
 
 class BaseBuffer(ABC):
-    def __init__(self, max_size: int, device: str) -> None:
+    def __init__(self, max_size: int, device: torch.device) -> None:
         self.max_size = max_size
         self.device = device
         self.is_buffer_finalized = False
@@ -12,6 +14,20 @@ class BaseBuffer(ABC):
     def add(self, data: dict) -> None:
         '''
         add a single experience to the buffer
+        '''
+        pass
+
+    @abstractmethod
+    def is_buffer_full(self) -> bool:
+        '''
+        Returns true if buffer is full
+        '''
+        pass 
+
+    @abstractmethod
+    def finalize_buffer(self, next_state_value) -> None:
+        '''
+        Finalize the buffer - move to final device, compute any needed values
         '''
         pass
 
@@ -29,5 +45,12 @@ class BaseBuffer(ABC):
     def clear(self) -> None:
         '''
         clear the buffer
+        '''
+        pass
+
+    @abstractmethod
+    def get_data(self) -> Dict: 
+        '''
+        return all the data as a single dict
         '''
         pass

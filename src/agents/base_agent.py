@@ -7,8 +7,8 @@ from typing import Dict, List, Tuple
 @dataclass
 class BaseAgent(ABC):
 
-    state_size: spaces.Space
-    action_size: spaces.Space
+    state_size: spaces.Space | int
+    action_size: spaces.Space | int
 
     device: torch.device
     
@@ -29,7 +29,7 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Tuple[int, torch.Tensor]: 
+    def select_action(self, state: torch.Tensor, is_training: bool = True) -> Tuple[torch.Tensor, torch.Tensor]: 
         pass
 
     @abstractmethod
@@ -49,6 +49,10 @@ class BaseAgent(ABC):
         '''
         pass
     
+    @abstractmethod
+    def find_value(self, state: torch.Tensor) -> torch.Tensor:
+        pass
+
     # utilities: 
 
     @abstractmethod
@@ -64,5 +68,5 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def get_loss_fns(self) -> torch.nn.Module: 
+    def get_loss_fns(self) -> List[torch.nn.Module]: 
         pass

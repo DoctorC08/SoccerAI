@@ -20,7 +20,7 @@ class SoccerEnv(modBaseGymEnv):
                  pmw: float = 0.2, 
                  max_steps: int = 1000,
                  random_ball_placement: bool = False,
-                 render_mode: str = None, 
+                 render_mode: str = "", 
                  **kwargs) -> None:
         '''
         Custom Soccer Environment for Multi-Agent Reinforcement Learning.

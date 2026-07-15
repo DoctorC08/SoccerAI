@@ -1,6 +1,8 @@
 import numpy as np
 import torch
+from torch.utils.data import TensorDataset, DataLoader
 import math
+from typing import Tuple, Any
 
 from src.train.base_trainer import BaseTrainer
 from src.agents.on_policy_agents.policy_agent import PolicyAgent
@@ -13,7 +15,7 @@ from src.eval.base_eval import BaseEval
 
 class onPolicyTrainer(BaseTrainer):
     def __init__(self, 
-                 agent, 
+                 agent: PolicyAgent, 
                  buffer, 
                  env, 
                  logger_config, 
@@ -23,6 +25,7 @@ class onPolicyTrainer(BaseTrainer):
                  model_save_path = './src/trained_agents/', 
                  save_best_model = True, 
                  best_model_exp_moving_avg = 0.95, 
+                 n_envs: int = 1, 
                  log_env_info = False, 
                  env_info_fn=None, 
                  render_evals=True, 
@@ -38,112 +41,98 @@ class onPolicyTrainer(BaseTrainer):
             model_save_path=model_save_path, 
             save_best_model=save_best_model, 
             best_model_exp_moving_avg=best_model_exp_moving_avg, 
+            n_envs = n_envs,
             log_env_info=log_env_info, 
             env_info_fn=env_info_fn, 
             render_evals=render_evals, 
             fps=fps
             )
 
-        self.reset_metrics()
-
+        self.reset_metrics() 
     
-    def init_logger(self, logger):
-        models = self.agents.get_models()
-        loss_fns = self.agents.get_loss_fns()
-        zipped_data = zip(models, loss_fns)
-
-        # Track all models: gradients and parameters 
-        for i, (model, loss_fn) in enumerate(zipped_data):
-            logger.watch_model(model, criterion=loss_fn, idx=i)
-        
-        return logger
-
-
-    def init_agents(self, agents): 
+    def init_agents(self, agents: PolicyAgent) -> PolicyAgent: 
         # Initialize agent
         return agents
-    
-    def get_batch_size(self, agents):
-        return agents.batch_size
 
-    def get_device(self):
-        return super().get_device()
-
-    def init_buffers(self, buffers):
-        return buffers
-    
-    def clear_buffers(self):
-        self.buffers.clear()
-    
-    def init_env(self, env):
-        return env
-    
     def init_eval(self, evaluator):
         return evaluator(self.render_evals, self.env, self.get_action, self.get_metrics)
     
     def collect_transition(self, state) -> Transition:
         action, logits = self.get_action(state, is_training=True)
+        action = action.cpu().numpy() if isinstance(action, torch.Tensor) else action
         next_state, reward, terminated, truncated, info = self.env.step(action)
         done = terminated or truncated
         transition = Transition(
             state=state, 
-            next_state=torch.from_numpy(next_state, dtype=torch.float32, device=self.device),
+            next_state=torch.as_tensor(next_state, dtype=torch.float32, device=self.device),
             actions=action, 
             rewards=reward, 
             logits=logits, 
-            done=done,
+            dones=done,
             info=info,
         )
         return transition
 
-    def get_action(self, state, is_training):
+    def get_action(self, state, is_training) -> Tuple[torch.Tensor, torch.Tensor]:
         # Get action, return action, logits 
-        action, logits = self.agents.select_action(state.to(self.agents.device), is_training=is_training)
-        return action, logits
+        actions, logits = self.agents.select_action(state.to(self.agents.device), is_training=is_training)
+        return actions, logits
 
-    def update_buffer(self, state, action, reward, done, logits, next_state) -> None: 
-
+    def update_buffer(self, transition) -> None: 
         # If on-policy add value estimates to buffer
-        if isinstance(state, torch.Tensor):
-            state_value = self.agents.find_value(state.to(self.agents.device))
-        elif isinstance(state, np.ndarray):
-            state_value = self.agents.find_value(torch.tensor(state, dtype=torch.float32).to(self.agents.device))
-        else:
-            raise TypeError(f"Unknown state type returned from env: {type(state)}")
+        state_value = self.agents.find_value(transition.state.to(self.agents.device)).detach().unsqueeze(-1)
+
+
         self.buffers.add({
-            "state": state,
-            "action": action,
-            "reward": reward,
-            "done": done,
-            "log_prob": logits,
-            "value": state_value.detach().cpu().item(),
+            "state": transition.state,
+            "actions": transition.actions,
+            "rewards": transition.rewards,
+            "dones": transition.dones,
+            "logits": transition.logits,
+            "values": state_value,
         })
+
         if self.buffers.is_buffer_full:
-            self.buffers.finalize_buffer(self.agents.find_value(next_state.to(self.agents.device)).detach().cpu().item())
-            self.update()
-            self.buffers.clear()
+            self.buffers.finalize_buffer(self.agents.find_value(transition.next_state.to(self.agents.device)).detach())
+            # self.update()
+            # self.buffers.clear()
 
     
-    def update_agents(self):
-        cur_updates = 0
+    def update_agents(self) -> Tuple[Any, int]:
         # update agents and return update_metrics, number of updates
+        cur_updates = 0
+        update_metrics = {}
+
+        buffer_data = self.buffers.get_data()
+        
+        states = buffer_data['state'].flatten(0, 1)
+        actions = buffer_data['actions'].flatten(0, 1)
+        advantages = buffer_data['advantage'].flatten(0, 1)
+        returns = buffer_data['return'].flatten(0, 1)
+
+        dataset = TensorDataset(states, actions, advantages, returns)
+        dataloader = DataLoader(
+            dataset=dataset, 
+            batch_size=self.batch_size, 
+            shuffle=True, 
+            num_workers=0
+        )
+
         # update self.n_updates 
         for epoch in range(self.agents.n_epochs):
-            sample_data = self.buffers.sample(self.batch_size, clear_buffer=False)
-            if isinstance(sample_data, list) and isinstance(self.buffers, TorchTensorBuffer):
-                # assuming if sample_data is single list then each item will hold dict with values lists of experiences
-                for i, experience in enumerate(sample_data):
-                    update_metrics = self.agents.update(states=experience['state'], 
-                                                        returns=experience['return'], 
-                                                        advantages=experience['advantage'], 
-                                                        actions=experience['action'],
-                                                        identifier=i)
-                    self.n_updates += 1
-                    cur_updates += 1
-            else:
-                raise TypeError("Unexpected sample data type during off-policy update or unexpected buffer type")
-        
-        # Clear buffer after epoch updates
+            for batch_idx, (b_states, b_actions, b_advantages, b_returns) in enumerate(dataloader):
+                # Calling specific on policy update method
+                metrics = self.agents.update(
+                    states=b_states, 
+                    returns=b_returns, 
+                    advantages=b_advantages, 
+                    actions=b_actions,
+                    identifier=f"epoch_{epoch}_batch_{batch_idx}"
+                )
+                update_metrics.update(metrics)
+                self.n_updates += 1
+                cur_updates += 1
+
         self.buffers.clear()
         
         return update_metrics, cur_updates
@@ -153,17 +142,20 @@ class onPolicyTrainer(BaseTrainer):
     def get_metrics(self, logits, logger_dir): 
         # update any training metrics, return a dict of metrics to be logged or used
         if self.ep_train_entropy is None:
-            self.ep_train_entropy = 0
+            self.ep_train_entropy = [0 for _ in range(self.n_envs)]
 
         # Find "certainty" by using entropy H(pi(.|s)) = - sum_a pi(a|s) log pi(a|s)
-        self.ep_train_entropy += (-logits.exp() * logits).sum().item()
+        self.ep_train_entropy += (-logits.exp() * logits)
 
         return {
             f"{logger_dir}ep_train_entropy": self.ep_train_entropy,
         }
 
+    def reset_ind_metrics(self, i):
+        self.ep_train_entropy[i] = 0
+
     def reset_metrics(self):
-        self.ep_train_entropy = 0
+        self.ep_train_entropy = torch.zeros(self.n_envs, device=self.device)
 
 
     def save_agents(self, path_name): 

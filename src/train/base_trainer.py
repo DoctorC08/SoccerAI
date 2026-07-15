@@ -6,6 +6,8 @@ import time
 import wandb
 from tqdm import tqdm
 import os
+import gymnasium as gym
+from typing import List, Dict, Any, Tuple, Iterable
 
 from src.buffers.base_buffer import BaseBuffer
 from src.buffers.on_policy_buffers.torch_tensor_buffer import TorchTensorBuffer
@@ -17,18 +19,14 @@ from src.envs.mod_base_gym_env import modBaseGymEnv
 from src.envs.transition import Transition
 
 from src.agents.base_agent import BaseAgent
-from src.agents.off_policy_agents.value_agent import ValueAgent
-from src.agents.on_policy_agents.policy_agent import PolicyAgent
-from src.agents.on_policy_agents.A2C import A2CAgent
 
 from src.eval.base_eval import BaseEval
-from src.eval.single_agent_eval
 
 class BaseTrainer(ABC):
     def __init__(self, 
                 agent: BaseAgent, 
                 buffer: BaseBuffer,
-                env: modBaseGymEnv, # Custom modified base gym
+                env: modBaseGymEnv, # Custom modified base gym, importantly it's a function not yet a class
                 logger_config: LoggerConfig, 
                 evaluator: BaseEval,
                 eval_freq: int = 100,
@@ -36,6 +34,7 @@ class BaseTrainer(ABC):
                 model_save_path: str = './src/trained_agents/',
                 save_best_model: bool = True,
                 best_model_exp_moving_avg: float = 0.95,
+                n_envs: int = 1, 
                 log_env_info: bool = False,
                 env_info_fn = None,
                 render_evals = True,
@@ -63,15 +62,14 @@ class BaseTrainer(ABC):
 
         self.batch_size = self.get_batch_size(self.agents)
 
-
         # Initialize env
-        self.env = self.init_env(env)
+        self.env = self.init_env(env, n_envs)
+        self.n_envs = n_envs
         self._state = None
-        self.ep_rews = 0.0 
-        self.ind_ep_rews = []
+        self.ep_rews = torch.tensor([])
         self.log_env_info = log_env_info
         self.env_info_fn = env_info_fn
-        self.env_info = None
+        self.env_info = []
 
         self.render_evals = render_evals
         self.fps = fps
@@ -102,47 +100,45 @@ class BaseTrainer(ABC):
         self.device = self.get_device()
 
         # Initialize evalutaor
-        self.evalutaor = self.init_evaluator(self, evaluator)
+        # Pass in single activated env instance
+        self.evaluator = self.init_evaluator(self, env(), evaluator, fps, eval_freq)
 
         # Validate params
         self.validate_params(self.agents, self.buffers, self.logger)
 
-    @abstractmethod
     def init_logger(self, logger):
-        pass
+        models = self.agents.get_models()
+        loss_fns = self.agents.get_loss_fns()
+        zipped_data = zip(models, loss_fns)
 
-    @abstractmethod 
+        # Track all models: gradients and parameters 
+        for i, (model, loss_fn) in enumerate(zipped_data):
+            logger.watch_model(model, criterion=loss_fn, idx=i)
+        
+        return logger
+
     def init_agents(self, agents): 
-        # Likely will either be a single BaseAgent or List[BaseAgent]
-        pass
-
-    @abstractmethod
+        # Initialize agent
+        return agents
+    
     def get_batch_size(self, agents):
-        # get a batch size to log: update_frames_per_sec": cur_updates * self.batch_size / delta_t,
-        pass
+        return agents.batch_size
 
-    @abstractmethod
-    def get_device(self) -> torch.DeviceObjType:
-        '''
-        get device
-        '''
+    def get_device(self):
         return self.agents.device
 
-    @abstractmethod 
     def init_buffers(self, buffers):
-        # Initialize buffers
-        pass 
+        return buffers
     
-    @abstractmethod
-    def init_env(self, env):
-        # Initialize env
-        pass 
+    def clear_buffers(self):
+        self.buffers.clear()
+    
+    def init_env(self, env, n_envs: int):
+        return gym.vector.SyncVectorEnv([env for _ in range(n_envs)])
 
-    @abstractmethod
-    def init_eval(self, evaluator):
-        # Initialize eval
-        pass 
-
+    def init_evaluator(self, env, evaluator, fps, eval_freq):
+        return evaluator(self.render_evals, env, self.get_action, self.get_metrics, fps, eval_freq)
+    
     @abstractmethod
     def collect_transition(self, state) -> Transition:
         '''
@@ -151,7 +147,7 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def get_action(self, state, is_training):
+    def get_action(self, state, is_training) -> Tuple[torch.Tensor, torch.Tensor]:
         '''
         Get action, return action, logits (if logits not used then return None)
         '''
@@ -169,16 +165,9 @@ class BaseTrainer(ABC):
         '''
         pass
 
-    @abstractmethod
-    def clear_buffers(self): 
-        '''
-        Clear buffers
-        '''
-        pass
-
 
     @abstractmethod 
-    def update_agents(self):
+    def update_agents(self) -> Tuple[Any, int]:
         '''
         update agents and return update_metrics, number of updates
         pdate self.n_updates 
@@ -186,17 +175,26 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def get_metrics(self, logits, logger_dir): 
+    def get_metrics(self, logits, logger_dir) -> Dict[str, Any]: 
         '''
-        update  training metrics, return a dict of metrics to be logged or used
+        update training metrics, return a dict of metrics to be logged or used
         '''
         # ex. self.ep_train_certainty += self.calc_certainty(logits)
         pass
 
     @abstractmethod
+    def reset_ind_metrics(self, i):
+        '''
+        Args: 
+            i: the index of current env being reset
+        reset any training metrics at the end of an episode
+        '''
+        pass
+
+    @abstractmethod
     def reset_metrics(self):
         '''
-        reset any training metrics at the end of an episode
+        reset all training metrics across every env
         '''
         pass
 
@@ -208,7 +206,7 @@ class BaseTrainer(ABC):
         pass
 
     @abstractmethod
-    def skip_update(self):
+    def skip_update(self) -> bool:
         '''
         check if update needs to be called
         for off policy agents should only be not skipping if self.t % self.model_update_freq == 0 and self.t > 0
@@ -222,21 +220,28 @@ class BaseTrainer(ABC):
         '''
         pass 
         
-
+    def store_best_model(self, eval_ep_rews) -> None: 
+        if self.save_best_model:
+            self.cur_score = (self.best_model_exp_moving_avg * self.cur_score) + \
+                            ((1 - self.best_model_exp_moving_avg) * eval_ep_rews)
+            if self.cur_score > self.save_threshold: 
+                if os.path.exists(self.model_save_path) is False:
+                    os.makedirs(self.model_save_path)
+                self.save_agents(path_name=f"{self.model_save_path}/" + self.name)
+                self.save_threshold = self.cur_score
 
     def train(self, n_steps: int, num_post_eval_runs: int = 0) -> None: 
         self.t = 0
         for t in tqdm(range(n_steps)): 
             if t % self.eval_freq == 0: 
-                self.evaluator.eval()
+                logger_vals, eval_ep_rews = self.evaluator.eval()
+                self.logger.log(logger_vals, self.n_train_step)
+                self.store_best_model(eval_ep_rews)
             
             self.run_step()
             self.update()
 
-            self.t += 1
-
-        #TODO: move eval into it's own class
-        if num_post_eval_runs: 
+        if num_post_eval_runs > 0: 
             eval_metrics = {}
             for _ in range(num_post_eval_runs):
                 cur_metrics = self.evaluator.eval(log=False)
@@ -263,69 +268,63 @@ class BaseTrainer(ABC):
         if self.log_env_info:
             self.env_info = []
         
-        if self.ep_rews is None: 
-            self.ep_rews = 0
         if self._state is None: 
             self._state, info = self.env.reset()
             # send state to a tensor
             if not isinstance(self._state, torch.Tensor):
                 self._state = torch.as_tensor(self._state, dtype=torch.float32, device=self.device)
-        if self.env.render_mode is not None: 
-            self.env.change_render_mode(None)
+            self.ep_rews = torch.zeros(self.n_envs, dtype=torch.float32, device=self.device)
 
-
-        #TODO: Define collect_transition and transition dataclass to allow for MARL envs/trainers
-        transition = self.collect_transition(self, self._state)
+        transition = self.collect_transition(self._state)
 
         # find state value if on policy
         # update buffer
-        self.update_buffer(self._state, transition=transition)
+        self.update_buffer(transition=transition)
 
         self._state = transition.next_state
 
-        if self.ind_ep_rews is None:
-            self.ind_ep_rews = [i for i in transition.rewards]
-
-        self.ep_rews += sum(transition.rewards)
-
-        self.ind_ep_rews += transition.rewards
+        self.ep_rews += torch.as_tensor(transition.rewards, dtype=torch.float32, device=self.device)
 
         if self.log_env_info:
             self.env_info.append(info)
 
-        metrics = self.get_metrics(transition.logits, logger_dir="train/")
-
-        self.n_train_step += 1
+        self.n_train_step += self.n_envs
 
         # Log episodic values if done
-        if transition.done:
-            self.n_eps += 1
-            if self.n_eps % self.logger_save_freq == 0: 
-                cur_time = time.time()
-                if self.log_env_info:
-                    self.logger.log({
-                        "train/ep_rewards": self.ep_rews, 
-                        "train/done": transition.done, 
-                        "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
-                        "train/env_info": self.env_info_fn(self.env_info), 
-                        } | metrics, self.n_eps
-                    )
-                    self.env_info = []
-                else: 
-                    self.logger.log({
-                        "train/ep_rewards": self.ep_rews, 
-                        "train/done": transition.done, 
-                        "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
-                    } | metrics, 
-                    self.n_eps
-                    )
-                
-                self.logger_train_update_speed = cur_time
+        dones = torch.as_tensor(transition.dones, dtype=torch.bool, device=self.device)
+        if dones.any:
+            for i in range(len(dones)):
+                if dones[i]: 
+                    self.n_eps += 1
+                    ep_rews = self.ep_rews[i]
 
-            # reset values
-            self.ep_rews = 0
-            self._state = None # Force env to reset
-            self.reset_metrics()
+                    metrics = self.get_metrics(transition.logits[i], logger_dir="train/")
+
+
+                    if self.n_eps % self.logger_save_freq == 0: 
+                        cur_time = time.time()
+                        if self.log_env_info is not None:
+                            self.logger.log({
+                                "train/ep_rewards": ep_rews, 
+                                "train/done": dones[i], 
+                                "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
+                                "train/env_info": self.env_info_fn(self.env_info), 
+                                } | metrics, self.n_train_step
+                            )
+                            self.env_info = []
+                        else: 
+                            self.logger.log({
+                                "train/ep_rewards": ep_rews, 
+                                "train/done": dones[i], 
+                                "train/logging_per_sec": 1 / (cur_time - self.logger_train_update_speed),
+                            } | metrics, self.n_train_step
+                            )
+                        
+                        self.logger_train_update_speed = cur_time
+
+                    # reset values
+                    self.ep_rews[i] = 0
+                    self.reset_ind_metrics(i)
 
 
     
@@ -343,7 +342,6 @@ class BaseTrainer(ABC):
         # inumerate through data and update
         update_metrics, cur_updates = self.update_agents()
 
-
         end_update_time = time.time()
         delta_t = end_update_time - _start_update_time
         update_metric_speeds = {
@@ -353,7 +351,7 @@ class BaseTrainer(ABC):
         }
         self.logger.log(
             update_metrics | update_metric_speeds, 
-            self.n_eps
+            self.n_train_step
         )
         return False
 

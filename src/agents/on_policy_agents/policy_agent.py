@@ -21,5 +21,5 @@ class PolicyAgent(BaseAgent, ABC):
 
     # Override parent update method to change parameters 
     @abstractmethod
-    def update(self, states, returns, advantages, log_prob=None, identifier=None) -> Dict[str, float]:
+    def update(self, states, returns, advantages, actions, identifier=None) -> Dict[str, float]:
         pass

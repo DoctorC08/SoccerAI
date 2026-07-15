@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
     training_params = TrainingParams(
         total_training_steps = 1_000_000,
-        eval_freq = 500,
         model_save_freq = 10_000,
         model_save_path = './src/trained_agents/10x10_Grid_A2C',
         save_best_model = True,
@@ -67,7 +66,7 @@ if __name__ == "__main__":
         wandb_config = wandb_config,
     )
 
-    evaluator = EvalParams(evaluator=SingleAgentEval)
+    evaluator = EvalParams(evaluator="SingleAgentEvaluator")
 
     # print(wandb_config)
 

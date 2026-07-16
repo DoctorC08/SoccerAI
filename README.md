@@ -19,7 +19,7 @@ implemented in PyTorch.
 docker build -t soccerai .
 ```
 
-**Behind a corporate TLS-intercepting proxy:** if the build fails with
+**Behind a TLS-intercepting proxy:** if the build fails with
 `SSL: CERTIFICATE_VERIFY_FAILED` / `self-signed certificate in certificate chain`,
 the slim base image doesn't trust your proxy's CA. Pass trusted hosts to pip:
 
@@ -52,6 +52,33 @@ editable install:
 docker run --rm -v "$PWD":/workspace -w /workspace soccerai pytest
 ```
 
+The mount hides the Linux `soccer_sim` extension compiled inside the image, so
+code that imports it (e.g. `src.examples.grid_A2C`) needs a Linux `.so` present
+in your tree. Compile one into the mount once (and again only when
+`soccer_env.cpp` changes); Python edits stay live after that:
+
+```bash
+# one-time: build the extension into your working tree
+docker run --rm -v "$PWD":/workspace -w /workspace \
+  --entrypoint python soccerai setup.py build_ext --inplace
+
+# then iterate freely (add -e WANDB_API_KEY for online logging)
+docker run --rm -v "$PWD":/workspace -w /workspace soccerai src.examples.grid_A2C
+```
+
+## Running with Weights & Biases
+
+Training scripts (e.g. `src.examples.grid_A2C`) log to [Weights & Biases](https://wandb.ai).
+A container is isolated, so authenticate by passing your API key as an environment variable — `wandb` reads `WANDB_API_KEY` automatically and logs in non-interactively.
+
+
+```bash
+export WANDB_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
+
+docker run --rm -e WANDB_API_KEY soccerai src.examples.grid_A2C
+```
+
+
 ## Local install
 
 ```bash
@@ -66,7 +93,7 @@ pip install -e ".[dev]"
 # Tests
 pytest
 
-# Examples (see the note above — these currently need a fix before they run)
+# Examples (set WANDB_API_KEY first, or WANDB_MODE=offline / disabled — see above)
 python -m src.examples.grid_A2C
 ```
 

@@ -1,6 +1,6 @@
-from src.utils.config import EnvConfig, AgentConfig, BufferConfig, TrainingParams, TrainerConfig
+from src.utils.config import EnvConfig, AgentConfig, BufferConfig, TrainingParams
 
-def ConfigsToWandb(env_config: EnvConfig, agent_config: AgentConfig, buffer_config: BufferConfig, training_params: TrainingParams, trainer_params: TrainerConfig = None):
+def ConfigsToWandb(env_config: EnvConfig, agent_config: AgentConfig, buffer_config: BufferConfig, training_params: TrainingParams, trainer_params=None):
     wandb_config = {}
     wandb_config.update(env_config.to_wandb_config())
     wandb_config.update(agent_config.to_wandb_config())

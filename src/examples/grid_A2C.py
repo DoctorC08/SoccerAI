@@ -66,7 +66,7 @@ if __name__ == "__main__":
         wandb_config = wandb_config,
     )
 
-    evaluator = EvalParams(evaluator="SingleAgentEvaluator")
+    evaluator = EvalParams(evaluator=SingleAgentEval)
 
     # print(wandb_config)
 

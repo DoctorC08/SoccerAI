@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import wandb
 import os
 from typing import Dict, Tuple
@@ -30,7 +31,10 @@ class SingleAgentEval(BaseEval):
 
         while True:
             action, logits = self.get_action(state, is_training=False)
-            if self.render_evals: 
+            # Eval runs a non-vectorized env, so collapse the scalar
+            if isinstance(action, torch.Tensor):
+                action = action.item()
+            if self.render_evals:
                 state, reward, terminated, truncated, _, render = self.env.step(action)
             else:
                 state, reward, terminated, truncated, _ = self.env.step(action)
@@ -71,9 +75,9 @@ class SingleAgentEval(BaseEval):
             else: 
                 print(f"Error: Final rendering array has unexpected dimensions: {eval_renderings.ndim}")
 
-            logger_vals["eval/video"] = eval_ep_rews
+            logger_vals["eval/eval_ep_rews"] = eval_ep_rews
             logger_vals["eval/length"] = length
-            logger_vals = {logger_vals | eval_metrics}
+            logger_vals = logger_vals | eval_metrics
         
         # update n eps
         self.n_eps += self.eval_freq

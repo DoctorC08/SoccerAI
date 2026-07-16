@@ -52,7 +52,7 @@ class TorchTensorBuffer(BaseBuffer):
 
         temp_dict = {}
         temp_dict['state'] = data.get('state')
-        temp_dict['values'] = data.get('value')
+        temp_dict['values'] = data.get('values')
         temp_dict['actions'] = data.get('actions')
         temp_dict['rewards'] = data.get('rewards')
         temp_dict['dones'] = data.get('dones')
@@ -79,7 +79,10 @@ class TorchTensorBuffer(BaseBuffer):
         for key in keys:
             if key not in self.temp_memory:
                 continue
-            self.temp_memory[key][self.index] = temp_dict[key]
+            value = temp_dict[key]
+            if not isinstance(value, torch.Tensor):
+                value = torch.as_tensor(value, device=self.device)
+            self.temp_memory[key][self.index] = value
 
         self.is_buffer_finalized = False
         self.index += 1

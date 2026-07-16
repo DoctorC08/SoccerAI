@@ -101,7 +101,7 @@ class BaseTrainer(ABC):
 
         # Initialize evalutaor
         # Pass in single activated env instance
-        self.evaluator = self.init_evaluator(self, env(), evaluator, fps, eval_freq)
+        self.evaluator = self.init_evaluator(env(), evaluator, fps, eval_freq)
 
         # Validate params
         self.validate_params(self.agents, self.buffers, self.logger)
@@ -292,7 +292,7 @@ class BaseTrainer(ABC):
 
         # Log episodic values if done
         dones = torch.as_tensor(transition.dones, dtype=torch.bool, device=self.device)
-        if dones.any:
+        if dones.any():
             for i in range(len(dones)):
                 if dones[i]: 
                     self.n_eps += 1
@@ -303,7 +303,7 @@ class BaseTrainer(ABC):
 
                     if self.n_eps % self.logger_save_freq == 0: 
                         cur_time = time.time()
-                        if self.log_env_info is not None:
+                        if self.log_env_info:
                             self.logger.log({
                                 "train/ep_rewards": ep_rews, 
                                 "train/done": dones[i], 

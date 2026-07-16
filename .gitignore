@@ -9,6 +9,7 @@ __pycache__/
 *.pyd
 *.pyc
 *.pdb
+*.so
 *.egg
 *.egg-info/
 dist/

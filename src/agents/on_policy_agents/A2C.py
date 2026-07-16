@@ -68,18 +68,13 @@ class A2CAgent(PolicyAgent):
             logits = logits.squeeze(0)
         action_dist = torch.distributions.Categorical(logits=logits)
         if is_training:
-            action = action_dist.sample() 
-            
-            log_prob = action_dist.log_prob(action)
-            
-            return action.item(), log_prob 
+            action = action_dist.sample()
         else:
             action = torch.argmax(logits, dim=-1)
-            action_item = action.item() 
-            
-            log_prob = action_dist.log_prob(action)
-            
-            return action_item, log_prob
+
+        log_prob = action_dist.log_prob(action)
+
+        return action, log_prob
 
     def update(self, states, returns, advantages, actions, identifier=None) -> Dict[str, float]:
         states = states.to(self.device)

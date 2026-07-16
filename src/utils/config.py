@@ -3,6 +3,7 @@ from typing import Any
 import torch
 
 from src.eval.base_eval import BaseEval
+from src.eval.single_agent_eval import SingleAgentEval
 
 @dataclass
 class EnvConfig:
@@ -105,7 +106,7 @@ class LoggerConfig:
     project: str = "SoccerAI"
     name: str = "DefaultRun"
     reinit: bool = False
-    wandb_config: dict = {}  # Additional WandB config parameters
+    wandb_config: dict = field(default_factory=dict)  # Additional WandB config parameters
     sweep: bool = False
     logger_save_freq: int = 1
 
@@ -271,7 +272,7 @@ class Config:
     training: TrainingParams = field(default_factory=TrainingParams)
     buffer: BufferConfig = field(default_factory=BufferConfig)
     logger: LoggerConfig = field(default_factory=LoggerConfig)
-    marl_agent_configs: dict = {}
+    marl_agent_configs: dict = field(default_factory=dict)
     evaluator: EvalParams = field(default_factory=EvalParams)
 
     def __str__(self):

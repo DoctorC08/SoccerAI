@@ -15,8 +15,8 @@ from src.eval.base_eval import BaseEval
 
 # Simple evaluator mock that doesn't need full rendering
 class MockEval(BaseEval):
-    def __init__(self, render_evals: bool, env, get_action, get_metrics) -> None:
-        super().__init__(render_evals, env, get_action, get_metrics)
+    def __init__(self, render_evals: bool, env, get_action, get_metrics, fps=5, eval_freq=100) -> None:
+        super().__init__(render_evals, env, get_action, get_metrics, fps, eval_freq)
 
     def eval(self, log=True):
         return {"final/ep_rewards": 0.0, "final/length": 0}, 0
@@ -24,7 +24,7 @@ class MockEval(BaseEval):
 def make_env_fn():
     return gym.make("CartPole-v1")
 
-def run_verification_test():
+def test_vectorized_trainer():
     print("Starting vectorized pipeline verification test...")
 
     device = torch.device('cpu')
@@ -115,4 +115,4 @@ def run_verification_test():
     print("  - Policy lag is exactly zero (in-thread processing).")
 
 if __name__ == "__main__":
-    run_verification_test()
+    test_vectorized_trainer()

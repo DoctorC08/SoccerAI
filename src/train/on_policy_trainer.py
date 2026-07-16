@@ -61,7 +61,7 @@ class onPolicyTrainer(BaseTrainer):
         action, logits = self.get_action(state, is_training=True)
         action = action.cpu().numpy() if isinstance(action, torch.Tensor) else action
         next_state, reward, terminated, truncated, info = self.env.step(action)
-        done = terminated or truncated
+        done = np.logical_or(terminated, truncated)
         transition = Transition(
             state=state, 
             next_state=torch.as_tensor(next_state, dtype=torch.float32, device=self.device),
@@ -80,7 +80,7 @@ class onPolicyTrainer(BaseTrainer):
 
     def update_buffer(self, transition) -> None: 
         # If on-policy add value estimates to buffer
-        state_value = self.agents.find_value(transition.state.to(self.agents.device)).detach().unsqueeze(-1)
+        state_value = self.agents.find_value(transition.state.to(self.agents.device)).detach().squeeze(-1)
 
 
         self.buffers.add({

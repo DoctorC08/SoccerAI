@@ -6,7 +6,9 @@ from src.agents.base_agent import BaseAgent
 
 @dataclass
 class ValueAgent(BaseAgent, ABC):
-
+    
+    target_network: torch.nn.Module
+    
     epsilon: float = .5
     epsilon_decay: float = 0.95
     epsilon_min: float = 0.01
@@ -18,10 +20,6 @@ class ValueAgent(BaseAgent, ABC):
     n_update_steps: int = 1
     model_update_freq: int = 1
 
-    target_network: torch.nn.Module = None
+    
 
-
-    @abstractmethod
-    def calculate_value(self, state: torch.Tensor) -> torch.Tensor:
-        pass
     
